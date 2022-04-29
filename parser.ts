@@ -100,7 +100,7 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<null> {
       c.parent;
       return expr;
     default:
-      console.log(stringifyTree(c, s, 2));
+      // console.log(stringifyTree(c, s, 2));
       throw new Error("PARSE ERROR: Could not parse expr at " + c.from + " " + c.to + ": " + s.substring(c.from, c.to));
   }
 }
@@ -192,9 +192,9 @@ export function traverseProgram(c: TreeCursor, s: string): Program<null> {
 
 export function parse(source : string) : Program<null> {
   const t = parser.parse(source); 
-  console.log("Parsed Source Code:");
-  console.log(stringifyTree(t.cursor(), source, 0));
-  console.log("\n");
+  // console.log("Parsed Source Code:");
+  // console.log(stringifyTree(t.cursor(), source, 0));
+  // console.log("\n");
   return traverseProgram(t.cursor(), source);
 }
 
