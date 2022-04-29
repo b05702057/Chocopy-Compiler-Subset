@@ -40,7 +40,7 @@ export function setupEnv(program: Program<null>): TypeEnv {
     // class definitions
     program.classDefs.forEach(s => {
         if (s.tag !== "class") {
-            throw new Error(`TYPE ERROR: not a class`);
+            throw Error(`Error: TYPE ERROR: not a class`);
         }
 
         // define the fields (name : type)
@@ -104,7 +104,7 @@ export function typeCheckStmts(stmts: Stmt<null>[], env: TypeEnv): Stmt<Type>[] 
                 const leftTypedValue = typeCheckExpr(stmt.name, env);
                 const rightTypedValue = typeCheckExpr(stmt.value, env); // to get a
                 if (!isSameType(leftTypedValue.a, rightTypedValue.a)) {
-                    throw new Error(`TYPE ERROR: Expected type ${leftTypedValue.a}; got type ${rightTypedValue.a}`);
+                    throw Error(`Error: TYPE ERROR: Expected type ${leftTypedValue.a}; got type ${rightTypedValue.a}`);
                 }
                 typedStmts.push({...stmt, a: "None", name: leftTypedValue, value: rightTypedValue});
                 break;
@@ -115,7 +115,7 @@ export function typeCheckStmts(stmts: Stmt<null>[], env: TypeEnv): Stmt<Type>[] 
             case "return":
                 const typedRet = typeCheckExpr(stmt.expr, env);
                 if(!isSameType(typedRet.a, env.retType)) {
-                    throw new Error(`TYPE ERROR: return expected type ${env.retType}; got type ${typedRet.a}`);
+                    throw new Error(`Error: TYPE ERROR: return expected type ${env.retType}; got type ${typedRet.a}`);
                 }
                 typedStmts.push({...stmt, expr: typedRet, a: typedRet.a}); // This can also be "None"
                 break;
@@ -201,7 +201,7 @@ export function typeCheckBinOp(expr: Expr<null>, env: TypeEnv): Expr<Type> {
         case BinOp.Is   :
             const leftTypedIs = typeCheckExpr(expr.left, env);
             const rightTypedIs = typeCheckExpr(expr.right, env);
-            if (!isSameType(leftTypedIs.a, rightTypedIs.a) || leftTypedIs.a === "int" || leftTypedIs.a === "bool") {
+            if (leftTypedIs.a === "int" || leftTypedIs.a === "bool" || rightTypedIs.a === "int" || rightTypedIs.a === "bool") {
                 throw new Error(`TYPECHECK ERROR: Cannot apply operator \'${expr.op}\' on types \'${leftTypedIs.a}\' and type \'${rightTypedIs.a}\'`);
             }
             return {...expr, left: leftTypedIs, right: rightTypedIs, a: "bool"}
@@ -212,10 +212,12 @@ export function typeCheckBinOp(expr: Expr<null>, env: TypeEnv): Expr<Type> {
 export function isSameType(s: Type, t: Type) {
     if (s === t) { 
         return true; // both "int", "bool", or "None"
-    } else if (s === "int" || s === "bool" || s === "None") {
+    } else if (s === "int" || s === "bool") {
         return false; 
-    } else if (t === "int" || t === "bool" || t === "None") {
+    } else if (t === "int" || t === "bool") {
         return false;
+    } else if (t === "None" || s === "None") { // "None" is the same type as any classes
+        return true
     } else {
         return (s.tag === t.tag && s.class === t.class) // both objects
     }
@@ -246,7 +248,7 @@ export function typeCheckUniOp(expr: Expr<null>, env: TypeEnv): Expr<Type> {
             if(notTypedExpr.a !== "bool") {
                 throw new Error(`TYPECHECK ERROR: uniary operator ${UniOp.Not} expected ${"bool"}; got type ${notTypedExpr.a}`);
             }
-            return {...expr, expr: typedExpr, a: "bool"};
+            return {...expr, expr: notTypedExpr, a: "bool"};
         default:
             throw new Error(`TYPECHECK ERROR: undefined unary operator ${expr}. This error should be called in parser`);
     }
@@ -397,7 +399,7 @@ export function typeCheckVarInit(inits: VarInit<null>[], env: TypeEnv): VarInit<
         // ex. x:int and 1
         const typedLiteral = typeCheckLiteral(init.initLiteral);
         if (!isSameType(init.type, typedLiteral.a) && !(isObject(init.type) && typedLiteral.a === "None")) { // ex. r1 : Rat = None
-            throw Error("TYPE ERROR: init type does not match literal type");
+            throw Error("Error: TYPE ERROR: init type does not match literal type");
         }
         typedInits.push({ ...init, a: init.type, initLiteral:typedLiteral }); // add the types to VarInit
     })

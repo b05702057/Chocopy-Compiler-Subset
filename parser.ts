@@ -34,10 +34,12 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<null> {
           value: s.substring(c.from, c.to) === "True"
         }
       }
+    case "None":
+      return { tag: "literal" , literal: { tag: "none" } };
     case "VariableName": // e.g. 'x'
-      return { tag: "id", name: s.substring(c.from, c.to) }
+      return { tag: "id", name: s.substring(c.from, c.to) };
     case "self": // not sure if this should be handled like this
-      return { tag: "id", name: "self" }
+      return { tag: "id", name: "self" };
     case "CallExpression": // e.g. max(x, y), abs(x), f()
       c.firstChild(); // "MemberExpression" or "VariableName"
       if (c.name === "MemberExpression") {
@@ -72,6 +74,7 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<null> {
       const num = Number(s.substring(c.from, c.to));
       c.nextSibling();
       const unionExpr = traverseExpr(c, s);
+      c.parent();
       return { tag: "uniop", op: uniOp, expr: unionExpr }; 
     case "BinaryExpression": // e.g. 1 + 2
       c.firstChild(); // go into binary expression
@@ -90,6 +93,12 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<null> {
       const pName = s.substring(c.from, c.to); 
       c.parent();
       return { tag: "getfield", obj: obj, name: pName }
+    case "ParenthesizedExpression":
+      c.firstChild(); // visit "("
+      c.nextSibling(); // visit the inner expression
+      const expr = traverseExpr(c, s);
+      c.parent;
+      return expr;
     default:
       console.log(stringifyTree(c, s, 2));
       throw new Error("PARSE ERROR: Could not parse expr at " + c.from + " " + c.to + ": " + s.substring(c.from, c.to));
@@ -139,7 +148,6 @@ export function traverseStmt(c : TreeCursor, s : string) : Stmt<null> {
     case "ClassDefinition":
       return traverseClassDef(c, s);
     default:
-      console.log(stringifyTree(c, s, 2));
       throw new Error("Could not parse stmt at " + c.node.from + " " + c.node.to + ": " + s.substring(c.from, c.to));
   }
 }
@@ -171,8 +179,6 @@ export function traverseProgram(c: TreeCursor, s: string): Program<null> {
 
       // parse statements
       do {
-        console.log("QQ")
-        console.log(c.name)
         if(isVarInit(c) || isFuncDef(c)) {
           throw new Error("PARSE ERROR: var init and func def should go before statements");
         }

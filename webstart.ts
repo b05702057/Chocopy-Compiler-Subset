@@ -1,6 +1,6 @@
 import {compile} from './compiler';
 
-import {run} from './runner';
+import {runwatsrc} from './runner';
 document.addEventListener("DOMContentLoaded", async () => {
   function display(arg : string) {
     const elt = document.createElement("pre");
@@ -54,7 +54,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       code.textContent = wat.wasmSource;
       document.getElementById("")
 
-      const result = await run(program, {importObject});
+      const result = await runwatsrc(program, {importObject});
       // obj => {
       var i32 = new Uint32Array(memory.buffer);
       for (var i = 0; i < 10; i++) {

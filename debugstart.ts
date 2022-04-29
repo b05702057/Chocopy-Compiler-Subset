@@ -1,7 +1,7 @@
 import { parser } from 'lezer-python';
 import { TreeCursor } from 'lezer-tree';
 import { traverseExpr, traverseStmt, parse, isFuncDef, traverseVarInit, traverseFuncDef, stringifyTree } from './parser';
-import {initTestCases, funcTestCasese, ifTestCases, returnTestCases, whileTestCases, callTestCases, uniopTestCases, binopTestCases, programTestCases, compiledTestCases, typeCheckCases, typeCheckHasReturnCases} from './tests/cases.test';
+import {initTestCases, funcTestCasese, ifTestCases, returnTestCases, whileTestCases, callTestCases, uniopTestCases, binopTestCases, programTestCases, compiledTestCases, typeCheckCases, typeCheckHasReturnCases} from './oldTests/cases.test';
 import {compile } from './compiler';
 
 import * as fs from 'fs';
@@ -30,7 +30,6 @@ export function program0(){
     console.log("========== stmts ==========");
     console.log(parsed.stmts[0]);
     console.log(parsed.stmts[0].tag);
-    
 }
 
 export function program1(){
@@ -246,5 +245,5 @@ function checkHasReturn(idx: number) {
 }
 
 // typeCheck0(22);
-// program(9);
-funcCompiled1(11);
+// program(11);
+funcCompiled1(12);

@@ -571,6 +571,15 @@ export const programTestCases: TestCase<Object>[] = [
     `,
     output: {}
   },
+  { // 11
+    name: "easy class",
+    input: 
+    `
+not True
+    `,
+    output: {}
+  },
+
 ]
 
 export const compiledTestCases: TestCase<String>[] = [
@@ -696,22 +705,11 @@ print(r1.mul(r2).mul(r2).n)
     name: "easy",
     input: 
     `
-class Rat(object):
-    n : int = 456
-    d : int = 789
-    def __init__(self : Rat):
-        pass
-    def new(self : Rat, n : int, d : int) -> Rat:
-        self.n = n
-        self.d = d
-        return self
-    def mul(self : Rat, other : Rat) -> Rat:
-        return Rat().new(self.n * other.n, self.d * other.d)
+class C(object):
+    x : int = 0
 
-r1 : Rat = None
-r1 = Rat().new(4, 5)
-r2.n = 3
-print(r2.n)
+c : C = None
+c.x
     `,
     output: ""
   },
@@ -725,7 +723,7 @@ export const typeCheckCases: TestCase<string>[] = [
   { // 1
     name: "test id (assign)",
     input: "x: int = 1\ny = x",
-    output: "TYPE ERROR: Not a variable y",
+    output: "TYPE ERROR: not a variable y",
   },
   { // 2
     name: "assign error",
@@ -897,18 +895,13 @@ export const typeCheckCases: TestCase<string>[] = [
     output: `Error: TYPE ERROR: Expected type [object Object]; got type int`,
   },
   {// 22
-    name: "incorrect assign type",
+    name: "easy",
     input:
     `
-    class Rat(object):
-        def __init__(self : Rat):
-            pass
-    class Pair(object):
-        def __init__(self : Pair): 
-            pass
-    r1 : Rat = None
-    p1 : Pair = None
-    p1 = r1
+class C(object):
+    x : int = 0
+c : C = None
+c = None
     `,
     output: `Error: TYPE ERROR: Expected type [object Object]; got type [object Object]`,
   }

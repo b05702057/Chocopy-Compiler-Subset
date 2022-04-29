@@ -1,4 +1,4 @@
-import { run } from '../runner';
+import { runwatsrc } from '../runner';
 import { expect } from 'chai';
 import {BinOp, Expr, Stmt} from "../ast";
 import 'mocha';

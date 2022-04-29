@@ -22,7 +22,7 @@ if(typeof process !== "undefined") {
   };
 }
 
-export async function run(source : string, config: any) : Promise<number> {
+export async function runwatsrc(source : string, config: any) : Promise<number> {
   
   const wabtInterface = await wabt();
   const parsed = parse(source).stmts;

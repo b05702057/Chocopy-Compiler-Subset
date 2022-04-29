@@ -305,9 +305,11 @@ function codeGenField(expr: Expr<Type>, globalEnv: GlobalEnv, localEnv: LocalEnv
 
   // If it is an instance, it should return its address, ex. (global.get $r1).
   const objAddr = codeGenExpr(expr.obj, globalEnv, localEnv);
+  const checkValidAddress = [...objAddr, `(i32.const -4) \n(i32.add)`, `(i32.load)`, `local.set $last`]; // c : Rat = None, c.x
+
   const classIndexes = globalEnv.classIndexes.get(expr.obj.a.class);
   const indexOfField = classIndexes.get(expr.name);
-  return [...objAddr, `(i32.const ${indexOfField * 4}) \n(i32.add)`, `(i32.load)`];
+  return [checkValidAddress.join("\n"), ...objAddr, `(i32.const ${indexOfField * 4}) \n(i32.add)`, `(i32.load)`];
 }
 
 function codeGenCall(expr: Expr<Type>, globalEnv: GlobalEnv, localEnv: LocalEnv): string[] {
@@ -334,15 +336,20 @@ function codeGenCall(expr: Expr<Type>, globalEnv: GlobalEnv, localEnv: LocalEnv)
     })
 
     // We have to modify the address of the heap, so the next class can use it.
-    return [
+    initVals = [
       ...initVals,
       `(global.get $heap)`, // the return value (the start address) => put in stack
       `(global.get $heap)`,
       `(i32.const ${classIndexes.size * 4})`,
       `(i32.add)`,
       `(global.set $heap)`,
-      `(call $$${expr.name}$__init__)`, // execute the __init__ operations
     ]
+
+    const initFuncName = `$$${expr.name}$__init__)`;
+    if (globalEnv.funcs.has(initFuncName)) {
+      initVals.push(`(call $$${expr.name}$__init__)`); // execute the __init__ operations
+    }
+    return initVals;
   }
   
   let codes: string[] = [];
