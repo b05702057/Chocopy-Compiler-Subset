@@ -91,7 +91,7 @@ class DelegatedModule extends Module {
 
 	/**
 	 * @param {NeedBuildContext} context context info
-	 * @param {function(WebpackError=, boolean=): void} callback callback function, returns true, if the module needs a rebuild
+	 * @param {function((WebpackError | null)=, boolean=): void} callback callback function, returns true, if the module needs a rebuild
 	 * @returns {void}
 	 */
 	needBuild(context, callback) {
@@ -223,6 +223,14 @@ class DelegatedModule extends Module {
 		this.userRequest = m.userRequest;
 		this.originalRequest = m.originalRequest;
 		this.delegateData = m.delegateData;
+	}
+
+	/**
+	 * Assuming this module is in the cache. Remove internal references to allow freeing some memory.
+	 */
+	cleanupForCache() {
+		super.cleanupForCache();
+		this.delegateData = undefined;
 	}
 }
 

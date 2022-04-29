@@ -50,6 +50,7 @@ class EnableWasmLoadingPlugin {
 					"EnableWasmLoadingPlugin need to be used to enable this type of wasm loading. " +
 					'This usually happens through the "output.enabledWasmLoadingTypes" option. ' +
 					'If you are using a function as entry which sets "wasmLoading", you need to add all potential library types to "output.enabledWasmLoadingTypes". ' +
+					"These types are enabled: " +
 					Array.from(getEnabledTypes(compiler)).join(", ")
 			);
 		}
@@ -83,11 +84,20 @@ class EnableWasmLoadingPlugin {
 				case "async-node": {
 					// TODO webpack 6 remove ReadFileCompileWasmPlugin
 					const ReadFileCompileWasmPlugin = require("../node/ReadFileCompileWasmPlugin");
+					// @ts-expect-error typescript bug for duplicate require
 					const ReadFileCompileAsyncWasmPlugin = require("../node/ReadFileCompileAsyncWasmPlugin");
 					new ReadFileCompileWasmPlugin({
 						mangleImports: compiler.options.optimization.mangleWasmImports
 					}).apply(compiler);
-					new ReadFileCompileAsyncWasmPlugin().apply(compiler);
+					new ReadFileCompileAsyncWasmPlugin({ type }).apply(compiler);
+					break;
+				}
+				case "async-node-module": {
+					// @ts-expect-error typescript bug for duplicate require
+					const ReadFileCompileAsyncWasmPlugin = require("../node/ReadFileCompileAsyncWasmPlugin");
+					new ReadFileCompileAsyncWasmPlugin({ type, import: true }).apply(
+						compiler
+					);
 					break;
 				}
 				case "universal":

@@ -4,7 +4,7 @@
 
 "use strict";
 
-const memorize = require("../util/memorize");
+const memoize = require("../util/memoize");
 
 const LAZY_TARGET = Symbol("lazy serialization target");
 const LAZY_SERIALIZED_VALUE = Symbol("lazy serialization data");
@@ -98,11 +98,12 @@ class SerializerMiddleware {
 	 * @returns {function(): Promise<any> | any} new lazy
 	 */
 	static serializeLazy(lazy, serialize) {
-		const fn = memorize(() => {
+		const fn = memoize(() => {
 			const r = lazy();
-			if (r instanceof Promise) return r.then(data => data && serialize(data));
-			if (r) return serialize(r);
-			return null;
+			if (r && typeof r.then === "function") {
+				return r.then(data => data && serialize(data));
+			}
+			return serialize(r);
 		});
 		fn[LAZY_TARGET] = lazy[LAZY_TARGET];
 		/** @type {any} */ (fn).options = /** @type {any} */ (lazy).options;
@@ -116,14 +117,35 @@ class SerializerMiddleware {
 	 * @returns {function(): Promise<any> | any} new lazy
 	 */
 	static deserializeLazy(lazy, deserialize) {
-		const fn = memorize(() => {
+		const fn = memoize(() => {
 			const r = lazy();
-			if (r instanceof Promise) return r.then(data => deserialize(data));
+			if (r && typeof r.then === "function") {
+				return r.then(data => deserialize(data));
+			}
 			return deserialize(r);
 		});
 		fn[LAZY_TARGET] = lazy[LAZY_TARGET];
 		/** @type {any} */ (fn).options = /** @type {any} */ (lazy).options;
 		fn[LAZY_SERIALIZED_VALUE] = lazy;
+		return fn;
+	}
+
+	/**
+	 * @param {function(): Promise<any> | any} lazy lazy function
+	 * @returns {function(): Promise<any> | any} new lazy
+	 */
+	static unMemoizeLazy(lazy) {
+		if (!SerializerMiddleware.isLazy(lazy)) return lazy;
+		const fn = () => {
+			throw new Error(
+				"A lazy value that has been unmemorized can't be called again"
+			);
+		};
+		fn[LAZY_SERIALIZED_VALUE] = SerializerMiddleware.unMemoizeLazy(
+			lazy[LAZY_SERIALIZED_VALUE]
+		);
+		fn[LAZY_TARGET] = lazy[LAZY_TARGET];
+		fn.options = /** @type {any} */ (lazy).options;
 		return fn;
 	}
 }

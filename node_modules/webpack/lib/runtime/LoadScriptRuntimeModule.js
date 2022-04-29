@@ -42,8 +42,12 @@ class LoadScriptRuntimeModule extends HelperRuntimeModule {
 		return hooks;
 	}
 
-	constructor() {
+	/**
+	 * @param {boolean=} withCreateScriptUrl use create script url for trusted types
+	 */
+	constructor(withCreateScriptUrl) {
 		super("load script");
+		this._withCreateScriptUrl = withCreateScriptUrl;
 	}
 
 	/**
@@ -61,9 +65,8 @@ class LoadScriptRuntimeModule extends HelperRuntimeModule {
 		} = outputOptions;
 		const fn = RuntimeGlobals.loadScript;
 
-		const { createScript } = LoadScriptRuntimeModule.getCompilationHooks(
-			compilation
-		);
+		const { createScript } =
+			LoadScriptRuntimeModule.getCompilationHooks(compilation);
 
 		const code = Template.asString([
 			"script = document.createElement('script');",
@@ -78,7 +81,11 @@ class LoadScriptRuntimeModule extends HelperRuntimeModule {
 			uniqueName
 				? 'script.setAttribute("data-webpack", dataWebpackPrefix + key);'
 				: "",
-			`script.src = url;`,
+			`script.src = ${
+				this._withCreateScriptUrl
+					? `${RuntimeGlobals.createScriptUrl}(url)`
+					: "url"
+			};`,
 			crossOriginLoading
 				? Template.asString([
 						"if (script.src.indexOf(window.location.origin + '/') !== 0) {",
@@ -96,7 +103,7 @@ class LoadScriptRuntimeModule extends HelperRuntimeModule {
 				? `var dataWebpackPrefix = ${JSON.stringify(uniqueName + ":")};`
 				: "// data-webpack is not used as build has no uniqueName",
 			"// loadScript function to load a script via script tag",
-			`${fn} = ${runtimeTemplate.basicFunction("url, done, key", [
+			`${fn} = ${runtimeTemplate.basicFunction("url, done, key, chunkId", [
 				"if(inProgress[url]) { inProgress[url].push(done); return; }",
 				"var script, needAttach;",
 				"if(key !== undefined) {",

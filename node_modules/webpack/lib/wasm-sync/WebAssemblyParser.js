@@ -6,9 +6,7 @@
 "use strict";
 
 const t = require("@webassemblyjs/ast");
-const {
-	moduleContextFromModuleAST
-} = require("@webassemblyjs/helper-module-context");
+const { moduleContextFromModuleAST } = require("@webassemblyjs/ast");
 const { decode } = require("@webassemblyjs/wasm-parser");
 const Parser = require("../Parser");
 const StaticExportsDependency = require("../dependencies/StaticExportsDependency");
@@ -91,7 +89,8 @@ class WebAssemblyParser extends Parser {
 
 		// extract imports and exports
 		const exports = [];
-		let jsIncompatibleExports = (state.module.buildMeta.jsIncompatibleExports = undefined);
+		let jsIncompatibleExports = (state.module.buildMeta.jsIncompatibleExports =
+			undefined);
 
 		const importedGlobals = [];
 		t.traverse(module, {
@@ -104,13 +103,13 @@ class WebAssemblyParser extends Parser {
 					/** @type {t.FuncSignature} */
 					const funcSignature = moduleContext.getFunction(funcIdx);
 
-					const incompatibleType = getJsIncompatibleTypeOfFuncSignature(
-						funcSignature
-					);
+					const incompatibleType =
+						getJsIncompatibleTypeOfFuncSignature(funcSignature);
 
 					if (incompatibleType) {
 						if (jsIncompatibleExports === undefined) {
-							jsIncompatibleExports = state.module.buildMeta.jsIncompatibleExports = {};
+							jsIncompatibleExports =
+								state.module.buildMeta.jsIncompatibleExports = {};
 						}
 						jsIncompatibleExports[node.name] = incompatibleType;
 					}

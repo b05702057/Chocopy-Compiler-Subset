@@ -6,7 +6,6 @@
 "use strict";
 
 /** @typedef {import("../../declarations/WebpackOptions").ChunkLoadingType} ChunkLoadingType */
-/** @typedef {import("../../declarations/WebpackOptions").LibraryOptions} LibraryOptions */
 /** @typedef {import("../Compiler")} Compiler */
 
 /** @type {WeakMap<Compiler, Set<ChunkLoadingType>>} */
@@ -46,10 +45,11 @@ class EnableChunkLoadingPlugin {
 	static checkEnabled(compiler, type) {
 		if (!getEnabledTypes(compiler).has(type)) {
 			throw new Error(
-				`Library type "${type}" is not enabled. ` +
+				`Chunk loading type "${type}" is not enabled. ` +
 					"EnableChunkLoadingPlugin need to be used to enable this type of chunk loading. " +
 					'This usually happens through the "output.enabledChunkLoadingTypes" option. ' +
-					'If you are using a function as entry which sets "chunkLoading", you need to add all potential library types to "output.enabledChunkLoadingTypes". ' +
+					'If you are using a function as entry which sets "chunkLoading", you need to add all potential chunk loading types to "output.enabledChunkLoadingTypes". ' +
+					"These types are enabled: " +
 					Array.from(getEnabledTypes(compiler)).join(", ")
 			);
 		}
@@ -96,9 +96,11 @@ class EnableChunkLoadingPlugin {
 					}).apply(compiler);
 					break;
 				}
-				case "import":
-					// TODO implement import chunk loading
-					throw new Error("Chunk Loading via import() is not implemented yet");
+				case "import": {
+					const ModuleChunkLoadingPlugin = require("../esm/ModuleChunkLoadingPlugin");
+					new ModuleChunkLoadingPlugin().apply(compiler);
+					break;
+				}
 				case "universal":
 					// TODO implement universal chunk loading
 					throw new Error("Universal Chunk Loading is not implemented yet");

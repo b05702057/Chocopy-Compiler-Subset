@@ -9,22 +9,22 @@ const Generator = require("../Generator");
 const WebAssemblyExportImportedDependency = require("../dependencies/WebAssemblyExportImportedDependency");
 const WebAssemblyImportDependency = require("../dependencies/WebAssemblyImportDependency");
 const { compareModulesByIdentifier } = require("../util/comparators");
-const memorize = require("../util/memorize");
+const memoize = require("../util/memoize");
 const WebAssemblyInInitialChunkError = require("./WebAssemblyInInitialChunkError");
 
 /** @typedef {import("webpack-sources").Source} Source */
 /** @typedef {import("../Compiler")} Compiler */
 /** @typedef {import("../Module")} Module */
 /** @typedef {import("../ModuleTemplate")} ModuleTemplate */
-/** @typedef {import("../ModuleTemplate").RenderContext} RenderContext */
+/** @typedef {import("../javascript/JavascriptModulesPlugin").RenderContext} RenderContext */
 
-const getWebAssemblyGenerator = memorize(() =>
+const getWebAssemblyGenerator = memoize(() =>
 	require("./WebAssemblyGenerator")
 );
-const getWebAssemblyJavascriptGenerator = memorize(() =>
+const getWebAssemblyJavascriptGenerator = memoize(() =>
 	require("./WebAssemblyJavascriptGenerator")
 );
-const getWebAssemblyParser = memorize(() => require("./WebAssemblyParser"));
+const getWebAssemblyParser = memoize(() => require("./WebAssemblyParser"));
 
 class WebAssemblyModulesPlugin {
 	constructor(options) {
@@ -61,7 +61,8 @@ class WebAssemblyModulesPlugin {
 				normalModuleFactory.hooks.createGenerator
 					.for("webassembly/sync")
 					.tap("WebAssemblyModulesPlugin", () => {
-						const WebAssemblyJavascriptGenerator = getWebAssemblyJavascriptGenerator();
+						const WebAssemblyJavascriptGenerator =
+							getWebAssemblyJavascriptGenerator();
 						const WebAssemblyGenerator = getWebAssemblyGenerator();
 
 						return Generator.byType({

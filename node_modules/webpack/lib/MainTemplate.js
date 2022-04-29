@@ -8,7 +8,7 @@
 const { SyncWaterfallHook } = require("tapable");
 const util = require("util");
 const RuntimeGlobals = require("./RuntimeGlobals");
-const memorize = require("./util/memorize");
+const memoize = require("./util/memoize");
 
 /** @typedef {import("webpack-sources").ConcatSource} ConcatSource */
 /** @typedef {import("webpack-sources").Source} Source */
@@ -20,20 +20,20 @@ const memorize = require("./util/memorize");
 /** @typedef {import("./Module")} Module} */
 /** @typedef {import("./util/Hash")} Hash} */
 /** @typedef {import("./DependencyTemplates")} DependencyTemplates} */
-/** @typedef {import("./ModuleTemplate").RenderContext} RenderContext} */
+/** @typedef {import("./javascript/JavascriptModulesPlugin").RenderContext} RenderContext} */
 /** @typedef {import("./RuntimeTemplate")} RuntimeTemplate} */
 /** @typedef {import("./ModuleGraph")} ModuleGraph} */
 /** @typedef {import("./ChunkGraph")} ChunkGraph} */
 /** @typedef {import("./Template").RenderManifestOptions} RenderManifestOptions} */
 /** @typedef {import("./Template").RenderManifestEntry} RenderManifestEntry} */
 
-const getJavascriptModulesPlugin = memorize(() =>
+const getJavascriptModulesPlugin = memoize(() =>
 	require("./javascript/JavascriptModulesPlugin")
 );
-const getJsonpTemplatePlugin = memorize(() =>
+const getJsonpTemplatePlugin = memoize(() =>
 	require("./web/JsonpTemplatePlugin")
 );
-const getLoadScriptRuntimeModule = memorize(() =>
+const getLoadScriptRuntimeModule = memoize(() =>
 	require("./runtime/LoadScriptRuntimeModule")
 );
 
@@ -91,7 +91,7 @@ class MainTemplate {
 			beforeStartup: {
 				tap: () => {
 					throw new Error(
-						"MainTemplate.hooks.beforeStartup has been removed (use RuntimeGlobals.startup instead)"
+						"MainTemplate.hooks.beforeStartup has been removed (use RuntimeGlobals.startupOnlyBefore instead)"
 					);
 				}
 			},
@@ -105,7 +105,7 @@ class MainTemplate {
 			afterStartup: {
 				tap: () => {
 					throw new Error(
-						"MainTemplate.hooks.afterStartup has been removed (use RuntimeGlobals.startup instead)"
+						"MainTemplate.hooks.afterStartup has been removed (use RuntimeGlobals.startupOnlyAfter instead)"
 					);
 				}
 			},
@@ -239,9 +239,8 @@ class MainTemplate {
 				"chunkIdExpression"
 			]),
 			get jsonpScript() {
-				const hooks = getLoadScriptRuntimeModule().getCompilationHooks(
-					compilation
-				);
+				const hooks =
+					getLoadScriptRuntimeModule().getCompilationHooks(compilation);
 				return hooks.createScript;
 			},
 			get linkPrefetch() {

@@ -6,7 +6,7 @@
 "use strict";
 
 const util = require("util");
-const memorize = require("./util/memorize");
+const memoize = require("./util/memoize");
 
 /** @typedef {import("webpack-sources").Source} Source */
 /** @typedef {import("./Chunk")} Chunk */
@@ -18,18 +18,9 @@ const memorize = require("./util/memorize");
 /** @typedef {import("./RuntimeTemplate")} RuntimeTemplate */
 /** @typedef {import("./util/Hash")} Hash */
 
-const getJavascriptModulesPlugin = memorize(() =>
+const getJavascriptModulesPlugin = memoize(() =>
 	require("./javascript/JavascriptModulesPlugin")
 );
-
-/**
- * @typedef {Object} RenderContext
- * @property {Chunk} chunk the chunk
- * @property {DependencyTemplates} dependencyTemplates the dependency templates
- * @property {RuntimeTemplate} runtimeTemplate the runtime template
- * @property {ModuleGraph} moduleGraph the module graph
- * @property {ChunkGraph} chunkGraph the chunk graph
- */
 
 // TODO webpack 6: remove this class
 class ModuleTemplate {
