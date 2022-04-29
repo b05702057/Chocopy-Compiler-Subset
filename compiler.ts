@@ -185,6 +185,9 @@ function codeGenExpr(expr : Expr<Type>, globalEnv: GlobalEnv, localEnv: LocalEnv
     case "call": 
         return codeGenCall(expr, globalEnv, localEnv);
     case "method":
+        // const objAddr = codeGenExpr(expr.obj, globalEnv, localEnv);
+        // const checkValidAddress = [...objAddr, `(i32.const -4) \n(i32.add)`, `(i32.load)`, `local.set $last`]; // c : Rat = None, c.x
+
         const argInstrs = expr.args.map(a => codeGenExpr(a, globalEnv, localEnv));
         const flattenArgs: string[] = []; // flat the list of lists
         argInstrs.forEach(arg => flattenArgs.push(arg.join("\n")));
@@ -193,9 +196,8 @@ function codeGenExpr(expr : Expr<Type>, globalEnv: GlobalEnv, localEnv: LocalEnv
           throw Error("This should be a class.");
         }
         // The call object is the first argument self.
-        const objAddr = codeGenExpr(expr.obj, globalEnv, localEnv);
-        const checkValidAddress = [...objAddr, `(i32.const -4) \n(i32.add)`, `(i32.load)`, `local.set $last`]; // c : Rat = None, c.x
-        return [checkValidAddress.join("\n"), objAddr.join("\n"), flattenArgs.join("\n"), `\n(call $$${expr.obj.a.class}$${expr.name})`];
+        const callObject = codeGenExpr(expr.obj, globalEnv, localEnv).join("\n");
+        return [callObject, flattenArgs.join("\n"), `\n(call $$${expr.obj.a.class}$${expr.name})`];
     case "getfield":
       return codeGenField(expr, globalEnv, localEnv);
   }
