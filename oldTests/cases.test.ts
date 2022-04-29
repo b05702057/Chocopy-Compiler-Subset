@@ -1,6 +1,3 @@
-import * as mocha from 'mocha';
-import { createEmptyGlobalEnv, GlobalEnv } from '../compiler';
-import {stringifyTree} from '../parser';
 export type TestCase<A>  = {
     name: string,
     input: string,

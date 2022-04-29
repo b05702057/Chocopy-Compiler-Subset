@@ -1,8 +1,6 @@
-import * as mocha from 'mocha';
 import {expect} from 'chai';
 import { parser } from 'lezer-python';
 import { traverseExpr, traverseStmt, parse, isFuncDef, isVarInit, node2type, traverseVarInit, traverseFuncDef} from '../parser';
-import {BinOp, Expr, Stmt} from "../ast";
 import {TestCase, binopTestCases, callTestCases, funcTestCasese, initTestCases, returnTestCases, uniopTestCases, whileTestCases, ifTestCases, programTestCases} from './cases.test'
 
 

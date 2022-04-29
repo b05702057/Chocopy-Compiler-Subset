@@ -1,5 +1,4 @@
 import { expect } from 'chai';
-import * as mocha from 'mocha';
 import { compile, createEmptyGlobalEnv, GlobalEnv } from '../compiler';
 import { compiledTestCases, funcTestCasese } from './cases.test';
 

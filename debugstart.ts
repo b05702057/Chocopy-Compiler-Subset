@@ -1,7 +1,7 @@
 import { parser } from 'lezer-python';
 import { TreeCursor } from 'lezer-tree';
-import { traverseExpr, traverseStmt, parse, isFuncDef, traverseVarInit, traverseFuncDef, stringifyTree } from './parser';
-import {initTestCases, funcTestCasese, ifTestCases, returnTestCases, whileTestCases, callTestCases, uniopTestCases, binopTestCases, programTestCases, compiledTestCases, typeCheckCases, typeCheckHasReturnCases} from './oldTests/cases.test';
+import { traverseStmt, parse, stringifyTree } from './parser';
+import { returnTestCases, callTestCases, programTestCases, compiledTestCases, typeCheckCases, typeCheckHasReturnCases} from './oldTests/cases.test';
 import {compile } from './compiler';
 
 import * as fs from 'fs';
