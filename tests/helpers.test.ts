@@ -2,19 +2,22 @@ import { parse } from "../parser";
 import {runwatsrc} from '../runner';
 import { typeCheckProgram } from "../typecheck";
 import { importObject } from "./import-object.test";
-import { Type } from '../ast';
 
 // Modify typeCheck to return a `Type` as we have specified below
 export function typeCheck(source: string) : Type {
   const program = typeCheckProgram(parse(source));
   if (program.stmts.length === 0) {
-    return "None";
+    return "none";
   }
   const lastStatement = program.stmts[program.stmts.length - 1];
   if (lastStatement.tag == "expr") {
+    if (lastStatement.expr.a === "None") {
+      return "none";
+    }
+    // convert the type for testing
     return lastStatement.expr.a;
   }
-  return "None";
+  return "none";
 }
 
 // Modify run to use `importObject` (imported above) to use for printing
@@ -29,16 +32,16 @@ export async function run(source: string) {
   return result;
 }
 
-// type Type =
-//   | "int"
-//   | "bool"
-//   | "none"
-//   | { tag: "object", class: string }
+type Type =
+  | "int"
+  | "bool"
+  | "none"
+  | { tag: "object", class: string }
 
 // Note that we have changed the "none" here to "None"
 export const NUM : Type = "int";
 export const BOOL : Type = "bool";
-export const NONE : Type = "None";
+export const NONE : Type = "none";
 export function CLASS(name : string) : Type { 
   return { tag: "object", class: name }
 };
