@@ -25,10 +25,6 @@ if(typeof process !== "undefined") {
 export async function runwatsrc(source : string, config: any) : Promise<number> {
   
   const wabtInterface = await wabt();
-  const parsed = parse(source).stmts;
-  
-  var returnType = "";
-  var returnExpr = "";
   /*
   const lastExpr = parsed[parsed.length - 1]
   
@@ -56,8 +52,7 @@ export async function runwatsrc(source : string, config: any) : Promise<number> 
   
   var asBinary = myModule.toBinary({});
   var wasmModule = await WebAssembly.instantiate(asBinary.buffer, importObject);
-  
+
   const result = (wasmModule.instance.exports.exported_func as any)();
-  
-  return result;
+  return result; 
 }

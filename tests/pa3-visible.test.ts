@@ -2,102 +2,102 @@ import { assertPrint, assertFail, assertTCFail, assertTC } from "./asserts.test"
 import { NUM, BOOL, NONE, CLASS } from "./helpers.test"
 
 describe("PA3 visible tests", () => {
-//   // 1
-//   assertPrint("literal-int-ops", `print(100 + 20 + 3)`, [`123`]);
-//   // 2
-//   assertPrint("literal-bool", `print(True)`, [`True`]);
-//   // 3
-//   assertPrint(
-//     "print-int-print-bool",
-//     `
-// print(0)
-// print(False)`,
-//     ["0", "False"]
-//   );
-//   // 4
-//   assertPrint("basic-global", `
-// x : int = 0
-// x = -1 * -1
-// print(x)`, [`1`]);
-//   // 5
-//   assertPrint("basic-if", `
-// x : int = 0
-// if True:
-//   x = 5
-// else:
-//   x = 3
-// print(x)` , [`5`]);
-//   // 6
-//   assertPrint(
-//     "basic-class-lookup",
-//     `
-// class C(object):
-//   x : int = 123
+  // 1
+  assertPrint("literal-int-ops", `print(100 + 20 + 3)`, [`123`]);
+  // 2
+  assertPrint("literal-bool", `print(True)`, [`True`]);
+  // 3
+  assertPrint(
+    "print-int-print-bool",
+    `
+print(0)
+print(False)`,
+    ["0", "False"]
+  );
+  // 4
+  assertPrint("basic-global", `
+x : int = 0
+x = -1 * -1
+print(x)`, [`1`]);
+  // 5
+  assertPrint("basic-if", `
+x : int = 0
+if True:
+  x = 5
+else:
+  x = 3
+print(x)` , [`5`]);
+  // 6
+  assertPrint(
+    "basic-class-lookup",
+    `
+class C(object):
+  x : int = 123
 
-// c : C = None
-// c = C()
-// print(c.x) `,
-//     [`123`]
-//   );
-//   // 7
-//   assertPrint(
-//     "basic-class-field-assign",
-//     `
-// class C(object):
-//   x : int = 123
+c : C = None
+c = C()
+print(c.x) `,
+    [`123`]
+  );
+  // 7
+  assertPrint(
+    "basic-class-field-assign",
+    `
+class C(object):
+  x : int = 123
   
-// c : C = None
-// c = C()
-// c.x = 42
-// print(c.x)`,
-//     [`42`]
-//   );
-//   // 8
-//   assertPrint("basic-class-method",
-// `
-// class C(object):
-//   x : int = 123
-//   def getX(self: C) -> int:
-//     return self.x
-//   def setX(self: C, x: int):
-//     self.x = x
+c : C = None
+c = C()
+c.x = 42
+print(c.x)`,
+    [`42`]
+  );
+  // 8
+  assertPrint("basic-class-method",
+`
+class C(object):
+  x : int = 123
+  def getX(self: C) -> int:
+    return self.x
+  def setX(self: C, x: int):
+    self.x = x
 
-// c : C = None
-// c = C()
-// print(c.getX())
-// c.setX(42)
-// print(c.getX())`, [`123`, `42`]);
-//   // 9
-//   assertPrint("multi-class", 
-// `
-// class C(object):
-//   x : int = 1
-//   y : int = 2
+c : C = None
+c = C()
+print(c.getX())
+c.setX(42)
+print(c.getX())`, [`123`, `42`]);
+  // 9
+  assertPrint("multi-class", 
+`
+class C(object):
+  x : int = 1
+  y : int = 2
 
-// class D(object):
-//   y : int = 3
-//   x : int = 4
-// c : C = None
-// d : D = None
-// c = C()
-// d = D()
-// print(c.x)
-// print(d.x)`, [`1`, `4`]);
-//   // 10
-//   assertPrint("alias-obj",
-// `
-// class C(object):
-//   x : int = 1
+class D(object):
+  y : int = 3
+  x : int = 4
+c : C = None
+d : D = None
+c = C()
+d = D()
+print(c.x)
+print(d.x)`, [`1`, `4`]);
+  // 10
+  assertPrint("alias-obj",
+`
+class C(object):
+  x : int = 1
 
-// c1 : C = None
-// c2 : C = None
+c1 : C = None
+c2 : C = None
 
-// c1 = C()
-// c2 = c1
-// c1.x = 123
-// print(c2.x)
-// `, [`123`]),
-  // 11
+c1 = C()
+c2 = c1
+c1.x = 123
+print(c2.x)
+`, [`123`]),
+  11
   assertPrint("chained-method-calls", `
 class C(object):
   x : int = 123
