@@ -11,10 +11,6 @@ describe('typy check error', () => {
             const t = typeCheckCases[idx];
             const program = parse(t.input);
             assert.throws(function() { typeCheckProgram(program) }, Error, t.output);
-
-            console.log("fuck")
-            console.log(program)
-            console.log(t.output)
         });
       }
     
