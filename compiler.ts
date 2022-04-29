@@ -53,6 +53,7 @@ export function setGlobalInfo(program: Program<Type>) {
   }
 
   // set class field indexes and init value
+  // set class methods
   for (let idx = 0; idx < program.classDefs.length; idx++) {
     var classIndexes = new Map<string, number>();
     var classInits = new Map<string, Literal<Type>>();
@@ -69,6 +70,10 @@ export function setGlobalInfo(program: Program<Type>) {
     const className = classDef.name;
     globalEnv.classIndexes.set(className, classIndexes);
     globalEnv.classInits.set(className, classInits);
+
+    classDef.methods.forEach(m => {
+      globalEnv.funcs.set(`$$${className}$${m.name}`, m);
+    })
   }
   return globalEnv;
 }
@@ -312,7 +317,8 @@ function codeGenField(expr: Expr<Type>, globalEnv: GlobalEnv, localEnv: LocalEnv
 
   const classIndexes = globalEnv.classIndexes.get(expr.obj.a.class);
   const indexOfField = classIndexes.get(expr.name);
-  return [checkValidAddress.join("\n"), ...objAddr, `(i32.const ${indexOfField * 4}) \n(i32.add)`, `(i32.load)`];
+  // return [checkValidAddress.join("\n"), ...objAddr, `(i32.const ${indexOfField * 4}) \n(i32.add)`, `(i32.load)`];
+  return [...objAddr, `(i32.const ${indexOfField * 4}) \n(i32.add)`, `(i32.load)`];
 }
 
 function codeGenCall(expr: Expr<Type>, globalEnv: GlobalEnv, localEnv: LocalEnv): string[] {
@@ -348,9 +354,9 @@ function codeGenCall(expr: Expr<Type>, globalEnv: GlobalEnv, localEnv: LocalEnv)
       `(global.set $heap)`,
     ]
 
-    const initFuncName = `$$${expr.name}$__init__)`;
+    const initFuncName = `$$${expr.name}$__init__`;
     if (globalEnv.funcs.has(initFuncName)) {
-      initVals.push(`(call $$${expr.name}$__init__)`); // execute the __init__ operations
+      initVals.push(`(call ${initFuncName})`); // execute the __init__ operations
     }
     return initVals;
   }
@@ -448,13 +454,6 @@ function codeGenClassDef(classDef: Stmt<Type>, globalEnv: GlobalEnv): string {
 
     // add a return statement to the init function
     if (m.name == "__init__") {
-      console.log(m.name);
-      console.log(funcDef.params);
-
-      // if (funcDef.params.length > 0) {
-      //   throw Error("TYPE ERROR: __init__ should only have one argument");
-      // }
-
       funcDef.stmts.push({ 
         a: "None", 
         tag: "return", 

@@ -110,13 +110,13 @@ class C(object):
     return self.new(123)
 
 C().new(42).clear()`, ["123", "42", "42", "123"])
-//   // 12
-//   assertFail("no-fields-for-none", `
-// class C(object):
-//   x : int = 0
+  // 12
+  assertFail("no-fields-for-none", `
+class C(object):
+  x : int = 0
   
-// c : C = None
-// c.x`);
+c : C = None
+c.x`);
   // 13
   assertPrint("constructor-non-none", `
 class C(object):

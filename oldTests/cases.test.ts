@@ -703,9 +703,11 @@ print(r1.mul(r2).mul(r2).n)
     input: 
     `
 class A(object):
-    g : int = 0
-    def __init__(self: A, g : int):
-        self.g = g
+    d : int = 0
+    def __init__(self: A):
+        self.d = 1
+      
+print(A().d)
     `,
     output: ""
   },
