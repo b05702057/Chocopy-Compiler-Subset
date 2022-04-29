@@ -5,7 +5,11 @@
 // - https://developer.mozilla.org/en-US/docs/WebAssembly/Using_the_JavaScript_API
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -62,7 +66,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 exports.__esModule = true;
-exports.run = void 0;
+exports.runwatsrc = void 0;
 var wabt_1 = __importDefault(require("wabt"));
 var compiler = __importStar(require("./compiler"));
 var parser_1 = require("./parser");
@@ -87,21 +91,21 @@ if (typeof process !== "undefined") {
         }
     };
 }
-function run(source, config) {
+function runwatsrc(source, config) {
     return __awaiter(this, void 0, void 0, function () {
         var wabtInterface, parsed, returnType, returnExpr, compiled, importObject, wasmSource, myModule, asBinary, wasmModule, result;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, wabt_1["default"]()];
+                case 0: return [4 /*yield*/, (0, wabt_1["default"])()];
                 case 1:
                     wabtInterface = _a.sent();
-                    parsed = parser_1.parse(source).stmts;
+                    parsed = (0, parser_1.parse)(source).stmts;
                     returnType = "";
                     returnExpr = "";
                     compiled = compiler.compile(source);
                     importObject = config.importObject;
-                    wasmSource = "(module\n    (func $print_num (import \"imports\" \"print_num\") (param i32) (result i32))\n    (func $print_bool (import \"imports\" \"print_bool\") (param i32) (result i32))\n    (func $print_none (import \"imports\" \"print_none\") (param i32) (result i32))\n    (func $print (import \"imports\" \"print\") (param i32) (result i32))\n    (func $abs (import \"imports\" \"abs\") (param i32) (result i32))\n    (func $max (import \"imports\" \"max\") (param i32) (param i32) (result i32))\n    (func $min (import \"imports\" \"min\") (param i32) (param i32) (result i32))\n    (func $pow (import \"imports\" \"pow\") (param i32) (param i32) (result i32))\n    " + compiled.wasmSource + "\n  )";
-                    console.log("wasmSource: " + wasmSource);
+                    wasmSource = "(module\n    (func $print_num (import \"imports\" \"print_num\") (param i32) (result i32))\n    (func $print_bool (import \"imports\" \"print_bool\") (param i32) (result i32))\n    (func $print_none (import \"imports\" \"print_none\") (param i32) (result i32))\n    (func $print (import \"imports\" \"print\") (param i32) (result i32))\n    (func $abs (import \"imports\" \"abs\") (param i32) (result i32))\n    (func $max (import \"imports\" \"max\") (param i32) (param i32) (result i32))\n    (func $min (import \"imports\" \"min\") (param i32) (param i32) (result i32))\n    (func $pow (import \"imports\" \"pow\") (param i32) (param i32) (result i32))\n    (memory (import \"imports\" \"mem\") 1)\n    ".concat(compiled.wasmSource, "\n  )");
+                    console.log("wasmSource: ".concat(wasmSource));
                     myModule = wabtInterface.parseWat("test.wat", wasmSource);
                     asBinary = myModule.toBinary({});
                     return [4 /*yield*/, WebAssembly.instantiate(asBinary.buffer, importObject)];
@@ -113,4 +117,4 @@ function run(source, config) {
         });
     });
 }
-exports.run = run;
+exports.runwatsrc = runwatsrc;

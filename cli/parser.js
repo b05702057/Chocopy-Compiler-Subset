@@ -1,6 +1,6 @@
 "use strict";
 exports.__esModule = true;
-exports.stringifyTree = exports.traverseFuncDef = exports.traverseLiteral = exports.traverseTypedVar = exports.node2type = exports.traverseVarInit = exports.isVarInit = exports.isFuncDef = exports.parse = exports.traverseProgram = exports.traverseStmt = exports.traverseExpr = exports.traverseArgs = void 0;
+exports.stringifyTree = exports.traverseFuncDef = exports.traverseMethDef = exports.traverseClassDef = exports.traverseLiteral = exports.traverseTypedVar = exports.node2type = exports.traverseVarInit = exports.isVarInit = exports.isClassDef = exports.isFuncDef = exports.parse = exports.traverseProgram = exports.traverseStmt = exports.traverseExpr = exports.traverseArgs = void 0;
 var lezer_python_1 = require("lezer-python");
 var ast_1 = require("./ast");
 function traverseArgs(c, s) {
@@ -20,40 +20,61 @@ exports.traverseArgs = traverseArgs;
 function traverseExpr(c, s) {
     switch (c.type.name) {
         case "Number": // eg. '1'
-            return { tag: "literal",
-                literal: { tag: "num",
+            return {
+                tag: "literal",
+                literal: {
+                    tag: "num",
                     value: Number(s.substring(c.from, c.to))
                 }
             };
         case 'Boolean':
-            return { tag: "literal",
-                literal: { tag: "bool", value: s.substring(c.from, c.to) === "True" } };
+            return {
+                tag: "literal",
+                literal: {
+                    tag: "bool",
+                    value: s.substring(c.from, c.to) === "True"
+                }
+            };
+        case "None":
+            return { tag: "literal", literal: { tag: "none" } };
         case "VariableName": // e.g. 'x'
-            return {
-                tag: "id",
-                name: s.substring(c.from, c.to)
-            };
+            return { tag: "id", name: s.substring(c.from, c.to) };
+        case "self": // not sure if this should be handled like this
+            return { tag: "id", name: "self" };
         case "CallExpression": // e.g. max(x, y), abs(x), f()
-            c.firstChild();
-            var callName = s.substring(c.from, c.to);
-            c.nextSibling(); // go to arglist
-            var args = traverseArgs(c, s);
-            c.parent();
-            return {
-                tag: "call",
-                name: callName,
-                args: args
-            };
+            c.firstChild(); // "MemberExpression" or "VariableName"
+            if (c.name === "MemberExpression") {
+                c.lastChild(); // "PropertyName"
+                var pName_1 = s.substring(c.from, c.to);
+                c.parent(); // get back to "MemberExpression"
+                var obj_1 = traverseExpr(c, s);
+                if (obj_1.tag !== "getfield") { // Visiting MemberExpression should always gets a getfield return.
+                    throw Error("The object has an incorrect tag.");
+                }
+                c.nextSibling(); // "ArgList"
+                var args = traverseArgs(c, s);
+                c.parent();
+                // We return obj.obj because the obj is actually not a getfield.
+                return { tag: "method", obj: obj_1.obj, args: args, name: pName_1 };
+            }
+            else {
+                // "VariableName"
+                var callName = s.substring(c.from, c.to);
+                c.nextSibling(); // "ArgList"
+                var args = traverseArgs(c, s);
+                c.parent(); // back to "CallExpression"
+                return { tag: "call", name: callName, args: args };
+            }
         case "UnaryExpression":
-            // WARNING: this uniary expression only deal with 
-            // uniary directly followed by a number 
+            // WARNING: This uniary expression only deals with uniary operator directly followed by a number 
             // e.g. -x, - (1 + 2)
-            c.firstChild(); // go into unary expressoin
+            c.firstChild(); // go into the unary expressoin
             var uniOp = str2uniop(s.substring(c.from, c.to));
             // pop uniary expression
             var num = Number(s.substring(c.from, c.to));
             c.nextSibling();
             var unionExpr = traverseExpr(c, s);
+            c.parent();
             return { tag: "uniop", op: uniOp, expr: unionExpr };
         case "BinaryExpression": // e.g. 1 + 2
             c.firstChild(); // go into binary expression
@@ -63,14 +84,23 @@ function traverseExpr(c, s) {
             c.nextSibling();
             var right = traverseExpr(c, s);
             c.parent(); // pop the binary
-            return {
-                tag: "binop",
-                op: op,
-                left: left,
-                right: right
-            };
+            return { tag: "binop", op: op, left: left, right: right };
+        case "MemberExpression": // ex. r2.n
+            c.firstChild(); // "CallExpression" or "VariableName"
+            var obj = traverseExpr(c, s);
+            c.nextSibling(); // "."
+            c.nextSibling(); // "PropertyName"
+            var pName = s.substring(c.from, c.to);
+            c.parent();
+            return { tag: "getfield", obj: obj, name: pName };
+        case "ParenthesizedExpression":
+            c.firstChild(); // visit "("
+            c.nextSibling(); // visit the inner expression
+            var expr = traverseExpr(c, s);
+            c.parent;
+            return expr;
         default:
-            console.log(stringifyTree(c, s, 2));
+            // console.log(stringifyTree(c, s, 2));
             throw new Error("PARSE ERROR: Could not parse expr at " + c.from + " " + c.to + ": " + s.substring(c.from, c.to));
     }
 }
@@ -84,13 +114,16 @@ exports.traverseExpr = traverseExpr;
 function traverseStmt(c, s) {
     switch (c.node.type.name) {
         case "AssignStatement": // a = 1, b = 2 or var Init
-            c.firstChild(); // go to name
-            var name_1 = s.substring(c.from, c.to);
-            c.nextSibling();
-            c.nextSibling(); // go to value
+            c.firstChild(); // "VariableName" or "MemberExpression"
+            // get lhs expression
+            var name = traverseExpr(c, s);
+            var variable = s.substring(c.from, c.to);
+            variable = variable.split(".")[0]; // This only tells the initial variable => self.y as self
+            c.nextSibling(); // "AssignOp"
+            c.nextSibling(); // rhs expression
             var value = traverseExpr(c, s);
             c.parent();
-            return { tag: "assign", name: name_1, value: value };
+            return { tag: "assign", name: name, variable: variable, value: value };
         case "ExpressionStatement":
             c.firstChild();
             var expr = traverseExpr(c, s);
@@ -100,48 +133,49 @@ function traverseStmt(c, s) {
             c.firstChild();
             c.nextSibling();
             var retExpr = { tag: "literal", literal: { tag: "none" } };
-            if (c.type.name !== '⚠') {
+            if (c.type.name !== '⚠') { // return None
                 retExpr = traverseExpr(c, s);
             }
             c.parent();
             return { tag: "return", expr: retExpr };
         case "PassStatement":
             return { tag: "pass" };
-        case "IfStatement": // TODO
+        case "IfStatement":
             return traverseIf(c, s);
-        case "WhileStatement": // TODO
+        case "WhileStatement":
             return traverseWhile(c, s);
+        case "ClassDefinition":
+            return traverseClassDef(c, s);
         default:
-            console.log(stringifyTree(c, s, 2));
             throw new Error("Could not parse stmt at " + c.node.from + " " + c.node.to + ": " + s.substring(c.from, c.to));
     }
 }
 exports.traverseStmt = traverseStmt;
 function traverseProgram(c, s) {
     var varInits = [];
-    var funcDefs = [];
-    var stmts = [];
+    var classDefs = [];
+    var funcDefs = []; // no FuncDef for PA3
+    var stmts = []; // class definitions are included here
     switch (c.node.type.name) {
         case "Script":
             c.firstChild();
+            // parse class definitions and variable initializations
             do {
-                // var Init
-                if (isVarInit(c)) { // parse variable initialization
-                    varInits.push(traverseVarInit(c, s));
+                if (isVarInit(c)) {
+                    varInits.push(traverseVarInit(c, s)); // parse variable initialization
                 }
                 else if (isFuncDef(c)) {
                     funcDefs.push(traverseFuncDef(c, s));
+                }
+                else if (isClassDef(c)) {
+                    classDefs.push(traverseClassDef(c, s));
                 }
                 else {
                     break;
                 }
             } while (c.nextSibling());
-            if (isVarInit(c) || isFuncDef(c)) { // no next sibling && no stmts
-                return {
-                    varInits: varInits,
-                    funcDefs: funcDefs,
-                    stmts: stmts
-                };
+            if (isVarInit(c) || isFuncDef(c) || isClassDef(c)) { // no next sibling && no stmts
+                return { varInits: varInits, classDefs: classDefs, funcDefs: funcDefs, stmts: stmts };
             }
             // parse statements
             do {
@@ -150,11 +184,7 @@ function traverseProgram(c, s) {
                 }
                 stmts.push(traverseStmt(c, s));
             } while (c.nextSibling());
-            return {
-                varInits: varInits,
-                funcDefs: funcDefs,
-                stmts: stmts
-            };
+            return { varInits: varInits, classDefs: classDefs, funcDefs: funcDefs, stmts: stmts };
         default:
             throw new Error("Could not parse program at " + c.node.from + " " + c.node.to);
     }
@@ -162,6 +192,9 @@ function traverseProgram(c, s) {
 exports.traverseProgram = traverseProgram;
 function parse(source) {
     var t = lezer_python_1.parser.parse(source);
+    // console.log("Parsed Source Code:");
+    // console.log(stringifyTree(t.cursor(), source, 0));
+    // console.log("\n");
     return traverseProgram(t.cursor(), source);
 }
 exports.parse = parse;
@@ -169,6 +202,10 @@ function isFuncDef(c) {
     return c.type.name === 'FunctionDefinition';
 }
 exports.isFuncDef = isFuncDef;
+function isClassDef(c) {
+    return c.type.name === 'ClassDefinition';
+}
+exports.isClassDef = isClassDef;
 function isVarInit(c) {
     if (c.type.name !== 'AssignStatement') {
         return false;
@@ -180,46 +217,44 @@ function isVarInit(c) {
     return isTypeDef;
 }
 exports.isVarInit = isVarInit;
+// c is now in AssignStatement
 function traverseVarInit(c, s) {
-    // c is now in AssignStatement
-    c.firstChild();
+    c.firstChild(); // VariableName
     var tVar = traverseTypedVar(c, s);
-    c.nextSibling();
-    c.nextSibling();
-    var literal = traverseLiteral(c, s);
+    c.nextSibling(); // TypeDef
+    c.nextSibling(); // AssignOp
+    var literal = traverseLiteral(c, s); // Number
     c.parent();
-    return {
-        name: tVar.name,
-        type: tVar.type,
-        initLiteral: literal
-    };
+    return { name: tVar.name, type: tVar.type, initLiteral: literal };
 }
 exports.traverseVarInit = traverseVarInit;
+// There would be much more types (classes).
 function node2type(c, s) {
     var typeStr = s.substring(c.from, c.to);
     switch (typeStr) {
         case 'int':
-            return ast_1.Type.int;
+            return "int";
         case 'bool':
-            return ast_1.Type.bool;
+            return "bool";
         case 'None':
-            return ast_1.Type.none;
-        default:
-            throw new Error("PARSE ERROR: unknown type " + typeStr);
+            return "None";
+        default: // We'll check if the type exists in the type checker
+            return {
+                tag: "object",
+                "class": typeStr
+            };
+        // throw new Error(`PARSE ERROR: unknown type ${typeStr}`);
     }
 }
 exports.node2type = node2type;
 function traverseTypedVar(c, s) {
-    var name = s.substring(c.from, c.to);
-    c.nextSibling();
-    c.firstChild();
-    c.nextSibling();
+    var name = s.substring(c.from, c.to); // "VariableName"
+    c.nextSibling(); // TypeDef
+    c.firstChild(); // :
+    c.nextSibling(); // VariableName
     var type = node2type(c, s);
     c.parent();
-    return {
-        name: name,
-        type: type
-    };
+    return { name: name, type: type };
 }
 exports.traverseTypedVar = traverseTypedVar;
 function traverseLiteral(c, s) {
@@ -240,11 +275,64 @@ function traverseLiteral(c, s) {
     throw new Error("PARSE ERROR: unsupporting literal type");
 }
 exports.traverseLiteral = traverseLiteral;
+function traverseClassDef(c, s) {
+    var cls = {
+        tag: "class",
+        name: "",
+        fields: [],
+        methods: []
+    };
+    c.firstChild(); // class node
+    c.nextSibling(); // class name
+    cls.name = s.substring(c.from, c.to); // assign class name
+    c.nextSibling(); // "Arglist" => fixed to be object
+    c.nextSibling(); // "Body"
+    c.firstChild(); // ":"
+    c.nextSibling(); // reach the fisrt statement in the body
+    var code = traverseClassBody(c, s);
+    cls.fields = code.varInits;
+    cls.methods = code.funcDefs;
+    c.parent(); // back to "Body"
+    c.parent(); // back to "ClassDefinition"
+    return cls;
+}
+exports.traverseClassDef = traverseClassDef;
+function traverseMethDef(c, s) {
+    var func = {
+        name: "",
+        params: null,
+        retType: "None",
+        varInits: null,
+        stmts: null
+    };
+    c.firstChild(); // "def"
+    c.nextSibling(); // method name
+    func.name = s.substring(c.from, c.to);
+    c.nextSibling(); // "ParamList" => at least 1 parameters (self)
+    func.params = traverseMethParams(c, s);
+    c.nextSibling(); // "TypeDef" or "Body"
+    // check if the method provides a return type
+    if (c.type.name === 'TypeDef') {
+        c.firstChild();
+        func.retType = node2type(c, s);
+        c.parent();
+        c.nextSibling(); // "Body"
+    }
+    c.firstChild(); // ":"
+    c.nextSibling(); // the first body statement
+    var code = traverseMethBody(c, s); // This line is the only difference
+    func.varInits = code.varInits;
+    func.stmts = code.stmts;
+    c.parent(); // back to "Body"
+    c.parent(); // back to "ClassDefinition"
+    return func;
+}
+exports.traverseMethDef = traverseMethDef;
 function traverseFuncDef(c, s) {
     var func = {
         name: "",
         params: null,
-        retType: ast_1.Type.none,
+        retType: "None",
         varInits: null,
         stmts: null
     };
@@ -274,6 +362,23 @@ function traverseFuncDef(c, s) {
     return func;
 }
 exports.traverseFuncDef = traverseFuncDef;
+// similar to traverseFuncParams, but escape the self parameter
+function traverseMethParams(c, s) {
+    var params = [];
+    c.firstChild(); // "("
+    c.nextSibling(); // "self"
+    c.nextSibling(); // "TypeDef"
+    c.nextSibling(); // ","
+    do {
+        if (s.substring(c.from, c.to) === ')')
+            break;
+        if (s.substring(c.from, c.to) === ',')
+            continue;
+        params.push(traverseTypedVar(c, s));
+    } while (c.nextSibling());
+    c.parent();
+    return params;
+}
 function traverseFuncParams(c, s) {
     var params = [];
     c.firstChild();
@@ -288,6 +393,37 @@ function traverseFuncParams(c, s) {
     c.parent();
     return params;
 }
+function traverseClassBody(c, s) {
+    var varInits = [];
+    var funcDefs = [];
+    do {
+        if (isVarInit(c)) {
+            varInits.push(traverseVarInit(c, s));
+        }
+        if (isFuncDef(c)) {
+            funcDefs.push(traverseMethDef(c, s));
+        }
+    } while (c.nextSibling());
+    // A class consists of variable initializations and method definitions.
+    return { varInits: varInits, classDefs: [], funcDefs: funcDefs, stmts: [] };
+}
+// A method body consists variable definitions and statements.
+function traverseMethBody(c, s) {
+    var varInits = [];
+    var stmts = [];
+    // traverse variable initializations
+    do {
+        if (!isVarInit(c)) {
+            break;
+        }
+        varInits.push(traverseVarInit(c, s));
+    } while (c.nextSibling());
+    // get all statement
+    do {
+        stmts.push(traverseStmt(c, s));
+    } while (c.nextSibling());
+    return { varInits: varInits, classDefs: [], stmts: stmts, funcDefs: [] };
+}
 function traverseFuncBody(c, s) {
     var varInits = [];
     var stmts = [];
@@ -296,7 +432,7 @@ function traverseFuncBody(c, s) {
             break;
         }
         if (isFuncDef(c)) {
-            throw new Error("PARSER ERRO: nested function definition is now allowed");
+            throw new Error("PARSER ERRO: nested function definition is not allowed");
         }
         varInits.push(traverseVarInit(c, s));
     } while (c.nextSibling());
@@ -310,11 +446,7 @@ function traverseFuncBody(c, s) {
         }
         stmts.push(traverseStmt(c, s));
     } while (c.nextSibling());
-    return {
-        varInits: varInits,
-        stmts: stmts,
-        funcDefs: []
-    };
+    return { varInits: varInits, classDefs: [], stmts: stmts, funcDefs: [] };
 }
 function str2uniop(opStr) {
     switch (opStr) {
@@ -358,20 +490,16 @@ function traverseWhile(c, s) {
     c.firstChild(); // while
     c.nextSibling(); // cond
     var cond = traverseExpr(c, s);
-    var body = [];
+    var stmts = [];
     c.nextSibling();
     c.firstChild();
     c.nextSibling();
     do {
-        body.push(traverseStmt(c, s));
+        stmts.push(traverseStmt(c, s));
     } while (c.nextSibling());
     c.parent();
     c.parent();
-    return {
-        tag: "while",
-        cond: cond,
-        stmts: body
-    };
+    return { tag: "while", cond: cond, stmts: stmts };
 }
 function traverseIf(c, s) {
     var ifClause = {
@@ -388,8 +516,8 @@ function traverseIf(c, s) {
             stmts: null
         }
     };
-    c.firstChild(); // if
     // check if
+    c.firstChild(); // if
     c.nextSibling();
     ifClause.ifOp.cond = traverseExpr(c, s);
     c.nextSibling();
