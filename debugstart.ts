@@ -245,5 +245,5 @@ function checkHasReturn(idx: number) {
 }
 
 // typeCheck0(22);
-// program(11);
-funcCompiled1(12);
+program(11);
+// funcCompiled1(12);

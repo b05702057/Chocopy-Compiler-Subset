@@ -131,11 +131,11 @@ export function traverseStmt(c : TreeCursor, s : string) : Stmt<null> {
       c.parent();
       return { tag: "expr", expr: expr }
     case "ReturnStatement":
-      c.firstChild();
-      c.nextSibling();
-      let retExpr: Expr<null> = { tag: "literal", literal: {tag: "none"} };
-      if(c.type.name !== '⚠'){ // return None
-        retExpr = traverseExpr(c, s);
+      c.firstChild(); // "ReturnStatement"
+      c.nextSibling(); // "return"
+      let retExpr: Expr<null> = { tag: "literal", literal: {tag: "none"} }; // default to be None
+      if(c.type.name !== "⚠" && c.name !== "return"){ // return None
+        retExpr = traverseExpr(c, s); // may be no return value, ex. return ___
       } 
       c.parent();
       return { tag: "return", expr: retExpr };
@@ -192,9 +192,9 @@ export function traverseProgram(c: TreeCursor, s: string): Program<null> {
 
 export function parse(source : string) : Program<null> {
   const t = parser.parse(source); 
-  // console.log("Parsed Source Code:");
-  // console.log(stringifyTree(t.cursor(), source, 0));
-  // console.log("\n");
+  console.log("Parsed Source Code:");
+  console.log(stringifyTree(t.cursor(), source, 0));
+  console.log("\n");
   return traverseProgram(t.cursor(), source);
 }
 

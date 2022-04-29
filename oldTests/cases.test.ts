@@ -572,7 +572,12 @@ export const programTestCases: TestCase<Object>[] = [
     name: "easy class",
     input: 
     `
-not True
+class A(object):
+def g(self: A) -> int:
+    if False:
+        return 0
+    else:
+        return
     `,
     output: {}
   },
