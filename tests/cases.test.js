@@ -495,7 +495,17 @@ exports.programTestCases = [
                         args: [{ tag: 'id', name: 'x' }, { tag: 'id', name: 'y' }]
                     } }]
         }
-    }
+    },
+    {
+        name: "class",
+        input: "\n    class Rat(object):\n        n : int = 456\n        d : int = 789\n        def __init__(self : Rat):\n            pass\n        def new(self : Rat, n : int, d : int) -> Rat:\n            self.n = n\n            self.d = d\n            return self\n        def mul(self : Rat, other : Rat) -> Rat:\n            return Rat().new(self.n * other.n, self.d * other.d)\n            \n    class Pair(object):\n        left : int = 0\n        right : int = 0\n        def __init__(self : Pair): \n            pass\n        def new(self : Pair, l : int, r : int) -> Pair:\n            self.left = l\n            self.right = r\n            return self\n        def mul(self : Pair, other : Pair) -> int:\n            return self.left * other.left + self.right * other.right\n  \n    p : Pair = None\n    r1 : Rat = None\n    r2 : Rat = None\n    p = Pair().new(8, 9)\n    r1 = Rat().new(4, 5)\n    r2 = Rat()\n    r2.n = 3\n    r2.d = 2\n    print(r1.mul(r2).mul(r2).n)\n    print(p.mul(Pair().new(3, 2)))\n    ",
+        output: {}
+    },
+    {
+        name: "easy class",
+        input: "\n    class Pair(object):\n        left : int = 0\n        right : int = 0\n        def __init__(self : Pair): \n            pass\n        def new(self : Pair, l : int, r : int) -> Pair:\n            self.left = l\n            self.right = r\n            return self\n        def mul(self : Pair, other : Pair) -> int:\n            return self.left * other.left + self.right * other.right\n    ",
+        output: {}
+    },
 ];
 exports.compiledTestCases = [
     {
@@ -532,7 +542,37 @@ exports.compiledTestCases = [
         name: "None is None",
         input: "def f():\n              pass\n            f() is f()",
         output: "\n(func $f  (result i32)\n(local $last i32)\n\nnop\n(call $f)\n(call $f)\n(i32.eq)\n(local.set $last)\n(i32.const 0))\n(func (export \"exported_func\") (local $last i32))"
-    }
+    },
+    {
+        name: "global and local",
+        input: "a: int = 5\nx: int = 1\ndef f(a: int) -> int:\n    b: int = 1\n    return a + b\nf(x)",
+        output: "(global $x (mut i32) (i32.const 1))\n(func $f (param $a i32) (result i32)\n(local $last i32)\n(local $b i32)\n(local.set $b (i32.const 1))\n(local.get $a)\n(local.get $b)\n(i32.add)\nreturn\n(i32.const 0))\n(func (export \"exported_func\") (result i32)(local $last i32)\n(global.get $x)\n(call $f)\n(local.set $last)(local.get $last))"
+    },
+    {
+        name: "global and local",
+        input: "a: int = 5\nx: int = 1\ndef f(a: int) -> int:\n    b: int = 1\n    return a + b\nf(x)",
+        output: "(global $x (mut i32) (i32.const 1))\n(func $f (param $a i32) (result i32)\n(local $last i32)\n(local $b i32)\n(local.set $b (i32.const 1))\n(local.get $a)\n(local.get $b)\n(i32.add)\nreturn\n(i32.const 0))\n(func (export \"exported_func\") (result i32)(local $last i32)\n(global.get $x)\n(call $f)\n(local.set $last)(local.get $last))"
+    },
+    {
+        name: "global and local assign",
+        input: "a: int = 5\nx: int = 1\ndef f(a: int) -> int:\n    b: int = 1\n    x=2\n    return a + b\nf(x)",
+        output: ""
+    },
+    {
+        name: "lecture 8",
+        input: "\nclass Rat(object):\n    n : int = 456\n    d : int = 789\n    def __init__(self : Rat):\n        pass\n    def new(self : Rat, n : int, d : int) -> Rat:\n        self.n = n\n        self.d = d\n        return self\n    def mul(self : Rat, other : Rat) -> Rat:\n        return Rat().new(self.n * other.n, self.d * other.d)\n        \nclass Pair(object):\n    left : int = 0\n    right : int = 0\n    def __init__(self : Pair): \n        pass\n    def new(self : Pair, l : int, r : int) -> Pair:\n        self.left = l\n        self.right = r\n        return self\n    def mul(self : Pair, other : Pair) -> int:\n        return self.left * other.left + self.right * other.right\n\np : Pair = None\nr1 : Rat = None\nr2 : Rat = None\np = Pair().new(8, 9)\nr1 = Rat().new(4, 5)\nr2 = Rat()\nr2.n = 3\nr2.d = 2\nprint(r1.mul(r2).mul(r2).n)\nprint(p.mul(Pair().new(3, 2)))\n    ",
+        output: "" // method!!!!!
+    },
+    {
+        name: "lecture 7",
+        input: "\nclass Rat(object):\n    n : int = 456\n    d : int = 789\n    def __init__(self : Rat):\n        pass\n    def new(self : Rat, n : int, d : int) -> Rat:\n        self.n = n\n        self.d = d\n        return self\n    def mul(self : Rat, other : Rat) -> Rat:\n        return Rat().new(self.n * other.n, self.d * other.d)\n\nr1 : Rat = None\nr2 : Rat = None\nr1 = Rat().new(4, 5)\nr2 = Rat()\nr2.n = 3\nr2.d = 2\nprint(r1.mul(r2).mul(r2).n)\n    ",
+        output: ""
+    },
+    {
+        name: "easy",
+        input: "\nclass Rat(object):\n    n : int = 456\n    d : int = 789\n    def __init__(self : Rat):\n        pass\n    def new(self : Rat, n : int, d : int) -> Rat:\n        self.n = n\n        self.d = d\n        return self\n    def mul(self : Rat, other : Rat) -> Rat:\n        return Rat().new(self.n * other.n, self.d * other.d)\n\nr1 : Rat = None\nr1 = Rat().new(4, 5)\nr2.n = 3\nprint(r2.n)\n    ",
+        output: ""
+    },
 ];
 exports.typeCheckCases = [
     {
@@ -629,6 +669,26 @@ exports.typeCheckCases = [
         name: "check if + if (false)",
         input: "def func(a: int, b: int) -> int:\n              if True:\n                  return 1\n              elif True:\n                  pass\n              else:\n                  return 1\n              if True:\n                  pass\n              elif True:\n                  return 0\n              else:\n                  return 1",
         output: "TYPECHECK ERROR: All paths in function/method must have a return statement: func"
+    },
+    {
+        name: "correct class",
+        input: "\n    class Rat(object):\n        n : int = 456\n        d : int = 789\n        def __init__(self : Rat):\n            pass\n        def new(self : Rat, n : int, d : int) -> Rat:\n            self.n = n\n            self.d = d\n            return self\n        def mul(self : Rat, other : Rat) -> Rat:\n            return Rat().new(self.n * other.n, self.d * other.d)\n            \n    class Pair(object):\n        left : int = 0\n        right : int = 0\n        def __init__(self : Pair): \n            pass\n        def new(self : Pair, l : int, r : int) -> Pair:\n            self.left = l\n            self.right = r\n            return self\n        def mul(self : Pair, other : Pair) -> int:\n            return self.left * other.left + self.right * other.right\n  \n    p : Pair = None\n    r1 : Rat = None\n    r2 : Rat = None\n    p = Pair().new(8, 9)\n    r1 = Rat().new(4, 5)\n    r2 = Rat()\n    r2.n = 3\n    r2.d = 2\n    print(r1.mul(r2).mul(r2).n)\n    print(p.mul(Pair().new(3, 2)))\n    ",
+        output: ""
+    },
+    {
+        name: "incorrect method return type",
+        input: "\n    class Rat(object):\n        def __init__(self : Rat):\n            pass\n        def new(self : Rat, n : int, d : int) -> int:\n            return self\n    ",
+        output: "Error: TYPE ERROR: return expected type int; got type [object Object]"
+    },
+    {
+        name: "incorrect assign type",
+        input: "\n    class Rat(object):\n        def __init__(self : Rat):\n            pass\n    r1 : Rat = None\n    r1 = 3\n    ",
+        output: "Error: TYPE ERROR: Expected type [object Object]; got type int"
+    },
+    {
+        name: "incorrect assign type",
+        input: "\n    class Rat(object):\n        def __init__(self : Rat):\n            pass\n    class Pair(object):\n        def __init__(self : Pair): \n            pass\n    r1 : Rat = None\n    p1 : Pair = None\n    p1 = r1\n    ",
+        output: "Error: TYPE ERROR: Expected type [object Object]; got type [object Object]"
     }
 ];
 exports.typeCheckHasReturnCases = [
@@ -668,3 +728,22 @@ exports.typeCheckHasReturnCases = [
         output: false
     }
 ];
+/*
+class Rat(object):
+  n : int = 456
+  d : int = 789
+  def __init__(self : Rat):
+    self.n = n
+    self.d = d
+    return self
+  def mul(self : Rat, other : Rat) -> Rat:
+    return Rat().new(self.n * other.n, self.d * other.d)
+
+r1 : Rat = None
+r2 : Rat = None
+r1 = Rat().new(4, 5)
+r2 = Rat()
+r2.n = 3
+r2.d = 2
+print(r1.mul(r2).mul(r2).n)
+*/

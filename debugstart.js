@@ -1,6 +1,6 @@
 "use strict";
 exports.__esModule = true;
-exports.program8 = exports.program7 = exports.program6 = exports.program5 = exports.return4 = exports.program4 = exports.program3 = exports.call3 = exports.program2 = exports.program1 = exports.program0 = exports.readCode = exports.printTestInfo = void 0;
+exports.program = exports.program8 = exports.program7 = exports.program6 = exports.program5 = exports.return4 = exports.program4 = exports.program3 = exports.call3 = exports.program2 = exports.program1 = exports.program0 = exports.readCode = exports.printTestInfo = void 0;
 var lezer_python_1 = require("lezer-python");
 var parser_1 = require("./parser");
 var cases_test_1 = require("./tests/cases.test");
@@ -206,14 +206,20 @@ function program8() {
     }
 }
 exports.program8 = program8;
+function program(idx) {
+    var s = cases_test_1.programTestCases[idx].input;
+    var parsed = (0, parser_1.parse)(s);
+    console.log(parsed);
+}
+exports.program = program;
 function funcCompiled0() {
     console.log(cases_test_1.compiledTestCases[0].input);
     var c = (0, compiler_1.compile)(cases_test_1.compiledTestCases[0].input);
     console.log(c.wasmSource);
 }
-function funcCompiled1() {
-    console.log(cases_test_1.compiledTestCases[6].input);
-    var c = (0, compiler_1.compile)(cases_test_1.compiledTestCases[6].input);
+function funcCompiled1(idx) {
+    console.log(cases_test_1.compiledTestCases[idx].input);
+    var c = (0, compiler_1.compile)(cases_test_1.compiledTestCases[idx].input);
     console.log(c.wasmSource);
 }
 function typeCheck0(idx) {
@@ -228,6 +234,6 @@ function checkHasReturn(idx) {
     console.log(program);
     console.log((0, typecheck_1.typeCheckHasReturn)(program.funcDefs[0].stmts, env));
 }
-// typeCheck0(16);
-program8();
-// funcCompiled1();
+// typeCheck0(22);
+// program(9);
+funcCompiled1(11);

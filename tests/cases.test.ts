@@ -511,7 +511,66 @@ export const programTestCases: TestCase<Object>[] = [
         args: [ { tag: 'id', name: 'x' }, { tag: 'id', name: 'y' } ]
       } } ]
     }
-  }
+  },
+  { // 9
+    name: "class",
+    input: 
+    `
+    class Rat(object):
+        n : int = 456
+        d : int = 789
+        def __init__(self : Rat):
+            pass
+        def new(self : Rat, n : int, d : int) -> Rat:
+            self.n = n
+            self.d = d
+            return self
+        def mul(self : Rat, other : Rat) -> Rat:
+            return Rat().new(self.n * other.n, self.d * other.d)
+            
+    class Pair(object):
+        left : int = 0
+        right : int = 0
+        def __init__(self : Pair): 
+            pass
+        def new(self : Pair, l : int, r : int) -> Pair:
+            self.left = l
+            self.right = r
+            return self
+        def mul(self : Pair, other : Pair) -> int:
+            return self.left * other.left + self.right * other.right
+  
+    p : Pair = None
+    r1 : Rat = None
+    r2 : Rat = None
+    p = Pair().new(8, 9)
+    r1 = Rat().new(4, 5)
+    r2 = Rat()
+    r2.n = 3
+    r2.d = 2
+    print(r1.mul(r2).mul(r2).n)
+    print(p.mul(Pair().new(3, 2)))
+    `,
+    output: {}
+  },
+  { // 10
+    name: "easy class",
+    input: 
+    `
+    class Pair(object):
+        left : int = 0
+        right : int = 0
+        def __init__(self : Pair): 
+            pass
+        def new(self : Pair, l : int, r : int) -> Pair:
+            self.left = l
+            self.right = r
+            return self
+        def mul(self : Pair, other : Pair) -> int:
+            return self.left * other.left + self.right * other.right
+    `,
+    output: {}
+  },
 ]
 
 export const compiledTestCases: TestCase<String>[] = [
@@ -550,8 +609,112 @@ export const compiledTestCases: TestCase<String>[] = [
               pass
             f() is f()`,
     output: "\n(func $f  (result i32)\n(local $last i32)\n\nnop\n(call $f)\n(call $f)\n(i32.eq)\n(local.set $last)\n(i32.const 0))\n(func (export \"exported_func\") (local $last i32))"
-  }
+  },
+  { // 7
+    name: "global and local",
+    input: "a: int = 5\nx: int = 1\ndef f(a: int) -> int:\n    b: int = 1\n    return a + b\nf(x)",
+    output: "(global $x (mut i32) (i32.const 1))\n(func $f (param $a i32) (result i32)\n(local $last i32)\n(local $b i32)\n(local.set $b (i32.const 1))\n(local.get $a)\n(local.get $b)\n(i32.add)\nreturn\n(i32.const 0))\n(func (export \"exported_func\") (result i32)(local $last i32)\n(global.get $x)\n(call $f)\n(local.set $last)(local.get $last))"
+  },
+  { // 8
+    name: "global and local",
+    input: "a: int = 5\nx: int = 1\ndef f(a: int) -> int:\n    b: int = 1\n    return a + b\nf(x)",
+    output: "(global $x (mut i32) (i32.const 1))\n(func $f (param $a i32) (result i32)\n(local $last i32)\n(local $b i32)\n(local.set $b (i32.const 1))\n(local.get $a)\n(local.get $b)\n(i32.add)\nreturn\n(i32.const 0))\n(func (export \"exported_func\") (result i32)(local $last i32)\n(global.get $x)\n(call $f)\n(local.set $last)(local.get $last))"
+  },
+  { // 9
+    name: "global and local assign",
+    input: "a: int = 5\nx: int = 1\ndef f(a: int) -> int:\n    b: int = 1\n    x=2\n    return a + b\nf(x)",
+    output: ""
+  },
+  { // 10
+    name: "lecture 8",
+    input: 
+    `
+class Rat(object):
+    n : int = 456
+    d : int = 789
+    def __init__(self : Rat):
+        pass
+    def new(self : Rat, n : int, d : int) -> Rat:
+        self.n = n
+        self.d = d
+        return self
+    def mul(self : Rat, other : Rat) -> Rat:
+        return Rat().new(self.n * other.n, self.d * other.d)
+        
+class Pair(object):
+    left : int = 0
+    right : int = 0
+    def __init__(self : Pair): 
+        pass
+    def new(self : Pair, l : int, r : int) -> Pair:
+        self.left = l
+        self.right = r
+        return self
+    def mul(self : Pair, other : Pair) -> int:
+        return self.left * other.left + self.right * other.right
 
+p : Pair = None
+r1 : Rat = None
+r2 : Rat = None
+p = Pair().new(8, 9)
+r1 = Rat().new(4, 5)
+r2 = Rat()
+r2.n = 3
+r2.d = 2
+print(r1.mul(r2).mul(r2).n)
+print(p.mul(Pair().new(3, 2)))
+    `,
+    output: "" // method!!!!!
+  },
+  { // 11
+    name: "lecture 7",
+    input: 
+    `
+class Rat(object):
+    n : int = 456
+    d : int = 789
+    def __init__(self : Rat):
+        pass
+    def new(self : Rat, n : int, d : int) -> Rat:
+        self.n = n
+        self.d = d
+        return self
+    def mul(self : Rat, other : Rat) -> Rat:
+        return Rat().new(self.n * other.n, self.d * other.d)
+
+r1 : Rat = None
+r2 : Rat = None
+r1 = Rat().new(4, 5)
+r2 = Rat()
+r2.n = 3
+r2.d = 2
+print(r1.mul(r2).mul(r2).n)
+    `,
+    output: ""
+  },
+  { // 12
+    name: "easy",
+    input: 
+    `
+class Rat(object):
+    n : int = 456
+    d : int = 789
+    def __init__(self : Rat):
+        pass
+    def new(self : Rat, n : int, d : int) -> Rat:
+        self.n = n
+        self.d = d
+        return self
+    def mul(self : Rat, other : Rat) -> Rat:
+        return Rat().new(self.n * other.n, self.d * other.d)
+
+r1 : Rat = None
+r1 = Rat().new(4, 5)
+r2.n = 3
+print(r2.n)
+    `,
+    output: ""
+  },
 ];
 export const typeCheckCases: TestCase<string>[] = [
   { // 0
@@ -667,8 +830,90 @@ export const typeCheckCases: TestCase<string>[] = [
               else:
                   return 1`,
     output: `TYPECHECK ERROR: All paths in function/method must have a return statement: func`
+  },
+  {// 19
+    name: "correct class",
+    input:
+    `
+    class Rat(object):
+        n : int = 456
+        d : int = 789
+        def __init__(self : Rat):
+            pass
+        def new(self : Rat, n : int, d : int) -> Rat:
+            self.n = n
+            self.d = d
+            return self
+        def mul(self : Rat, other : Rat) -> Rat:
+            return Rat().new(self.n * other.n, self.d * other.d)
+            
+    class Pair(object):
+        left : int = 0
+        right : int = 0
+        def __init__(self : Pair): 
+            pass
+        def new(self : Pair, l : int, r : int) -> Pair:
+            self.left = l
+            self.right = r
+            return self
+        def mul(self : Pair, other : Pair) -> int:
+            return self.left * other.left + self.right * other.right
+  
+    p : Pair = None
+    r1 : Rat = None
+    r2 : Rat = None
+    p = Pair().new(8, 9)
+    r1 = Rat().new(4, 5)
+    r2 = Rat()
+    r2.n = 3
+    r2.d = 2
+    print(r1.mul(r2).mul(r2).n)
+    print(p.mul(Pair().new(3, 2)))
+    `,
+    output: ``,
+  },
+  {// 20
+    name: "incorrect method return type",
+    input:
+    `
+    class Rat(object):
+        def __init__(self : Rat):
+            pass
+        def new(self : Rat, n : int, d : int) -> int:
+            return self
+    `,
+    output: `Error: TYPE ERROR: return expected type int; got type [object Object]`,
+  },
+  {// 21
+    name: "incorrect assign type",
+    input:
+    `
+    class Rat(object):
+        def __init__(self : Rat):
+            pass
+    r1 : Rat = None
+    r1 = 3
+    `,
+    output: `Error: TYPE ERROR: Expected type [object Object]; got type int`,
+  },
+  {// 22
+    name: "incorrect assign type",
+    input:
+    `
+    class Rat(object):
+        def __init__(self : Rat):
+            pass
+    class Pair(object):
+        def __init__(self : Pair): 
+            pass
+    r1 : Rat = None
+    p1 : Pair = None
+    p1 = r1
+    `,
+    output: `Error: TYPE ERROR: Expected type [object Object]; got type [object Object]`,
   }
 ]
+
 export const typeCheckHasReturnCases: TestCase<Boolean>[] =  [
   {
     name: "check whether all paths has return",
@@ -759,3 +1004,23 @@ export const typeCheckHasReturnCases: TestCase<Boolean>[] =  [
     output: false,
   }
 ]
+
+/*
+class Rat(object):
+  n : int = 456
+  d : int = 789
+  def __init__(self : Rat):
+    self.n = n
+    self.d = d
+    return self
+  def mul(self : Rat, other : Rat) -> Rat:
+    return Rat().new(self.n * other.n, self.d * other.d)
+
+r1 : Rat = None
+r2 : Rat = None
+r1 = Rat().new(4, 5)
+r2 = Rat()
+r2.n = 3
+r2.d = 2
+print(r1.mul(r2).mul(r2).n)
+*/

@@ -48,6 +48,7 @@ export async function run(source : string, config: any) : Promise<number> {
     (func $max (import "imports" "max") (param i32) (param i32) (result i32))
     (func $min (import "imports" "min") (param i32) (param i32) (result i32))
     (func $pow (import "imports" "pow") (param i32) (param i32) (result i32))
+    (memory (import "imports" "mem") 1)
     ${compiled.wasmSource}
   )`;
   console.log(`wasmSource: ${wasmSource}`);

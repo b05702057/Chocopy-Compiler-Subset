@@ -7,6 +7,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("output").appendChild(elt);
     elt.innerText = arg;
   }
+  let memory = new WebAssembly.Memory({initial:10, maximum:100});
   var importObject = {
     imports: {
       print_num: (arg : any) => {
@@ -30,6 +31,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         // elt.innerText = arg;
         return arg;
       },
+      mem: memory,
       abs: Math.abs,
       max: Math.max,
       min: Math.min,
@@ -50,9 +52,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       const wat = compile(program);
       const code = document.getElementById("generated-code");
       code.textContent = wat.wasmSource;
+      document.getElementById("")
 
       const result = await run(program, {importObject});
-      console.log(result);
+      // obj => {
+      var i32 = new Uint32Array(memory.buffer);
+      for (var i = 0; i < 10; i++) {
+        console.log(`i32[${i}]: ${i32[i]}`);
+      }
       if (result !== undefined) {
         output.textContent += String(result);
       }

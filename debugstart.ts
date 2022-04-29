@@ -214,14 +214,20 @@ export function program8() {
     }
 }
 
+export function program(idx : number) {
+    const s = programTestCases[idx].input;
+    const parsed = parse(s);
+    console.log(parsed);
+}
+
 function funcCompiled0() {
     console.log(compiledTestCases[0].input);
     const c = compile(compiledTestCases[0].input);
     console.log(c.wasmSource);
 }
-function funcCompiled1() {
-    console.log(compiledTestCases[6].input);
-    const c = compile(compiledTestCases[6].input);
+function funcCompiled1(idx: number) {
+    console.log(compiledTestCases[idx].input);
+    const c = compile(compiledTestCases[idx].input);
     console.log(c.wasmSource);
 }
 
@@ -239,7 +245,6 @@ function checkHasReturn(idx: number) {
     console.log(typeCheckHasReturn(program.funcDefs[0].stmts, env))
 }
 
-
-// typeCheck0(16);
-program8();
-// funcCompiled1();
+// typeCheck0(22);
+// program(9);
+funcCompiled1(11);
