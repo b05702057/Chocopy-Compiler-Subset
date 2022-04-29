@@ -193,8 +193,9 @@ function codeGenExpr(expr : Expr<Type>, globalEnv: GlobalEnv, localEnv: LocalEnv
           throw Error("This should be a class.");
         }
         // The call object is the first argument self.
-        const callObject = codeGenExpr(expr.obj, globalEnv, localEnv).join("\n");
-        return [callObject, flattenArgs.join("\n"), `\n(call $$${expr.obj.a.class}$${expr.name})`];
+        const objAddr = codeGenExpr(expr.obj, globalEnv, localEnv);
+        const checkValidAddress = [...objAddr, `(i32.const -4) \n(i32.add)`, `(i32.load)`, `local.set $last`]; // c : Rat = None, c.x
+        return [checkValidAddress.join("\n"), objAddr.join("\n"), flattenArgs.join("\n"), `\n(call $$${expr.obj.a.class}$${expr.name})`];
     case "getfield":
       return codeGenField(expr, globalEnv, localEnv);
   }

@@ -163,7 +163,7 @@ export function typeCheckExpr(expr: Expr<null>, env: TypeEnv): Expr<Type> {
 
 export function typeCheckBinOp(expr: Expr<null>, env: TypeEnv): Expr<Type> {
     if (expr.tag != "binop") {
-        throw new Error("TYPECHECK  ERROR: typeCheckBinOp only take binary operation");
+        throw new Error("TYPE ERROR: typeCheckBinOp only take binary operation");
     }
     switch (expr.op) {
         // work for int
@@ -179,7 +179,7 @@ export function typeCheckBinOp(expr: Expr<null>, env: TypeEnv): Expr<Type> {
             const leftTyped = typeCheckExpr(expr.left, env); // add the type to the left expression
             const rightTyped = typeCheckExpr(expr.right, env);
             if (!isSameType(leftTyped.a, rightTyped.a) || (leftTyped.a !== "int")) {
-                throw new Error(`TYPECHECK ERROR: Cannot apply operator \'${expr.op}\' on types \'${leftTyped.a}\' and type \'${rightTyped.a}\'`);
+                throw new Error(`TYPE ERROR: Cannot apply operator \'${expr.op}\' on types \'${leftTyped.a}\' and type \'${rightTyped.a}\'`);
             }
             if (expr.op === BinOp.Seq || expr.op === BinOp.Leq || expr.op === BinOp.Sml || expr.op === BinOp.Lrg) {
                 return { ...expr, left: leftTyped, right:rightTyped, a: "bool" };
@@ -193,7 +193,7 @@ export function typeCheckBinOp(expr: Expr<null>, env: TypeEnv): Expr<Type> {
             const rightTypedEq = typeCheckExpr(expr.right, env);
             // filter out classes and "None"
             if (!isSameType(leftTypedEq.a, rightTypedEq.a) || isObject(leftTypedEq.a) || leftTypedEq.a == "None" ) {
-                throw new Error(`TYPECHECK ERROR: Cannot apply operator \'${expr.op}\' on types \'${leftTypedEq.a}\' and type \'${rightTypedEq.a}\'`);
+                throw new Error(`TYPE ERROR: Cannot apply operator \'${expr.op}\' on types \'${leftTypedEq.a}\' and type \'${rightTypedEq.a}\'`);
             }
             return { ...expr, left: leftTypedEq, right: rightTypedEq, a: "bool" };
         
@@ -202,7 +202,7 @@ export function typeCheckBinOp(expr: Expr<null>, env: TypeEnv): Expr<Type> {
             const leftTypedIs = typeCheckExpr(expr.left, env);
             const rightTypedIs = typeCheckExpr(expr.right, env);
             if (leftTypedIs.a === "int" || leftTypedIs.a === "bool" || rightTypedIs.a === "int" || rightTypedIs.a === "bool") {
-                throw new Error(`TYPECHECK ERROR: Cannot apply operator \'${expr.op}\' on types \'${leftTypedIs.a}\' and type \'${rightTypedIs.a}\'`);
+                throw new Error(`TYPE ERROR: Cannot apply operator \'${expr.op}\' on types \'${leftTypedIs.a}\' and type \'${rightTypedIs.a}\'`);
             }
             return {...expr, left: leftTypedIs, right: rightTypedIs, a: "bool"}
     }
@@ -232,14 +232,14 @@ export function isObject(s: Type) {
 
 export function typeCheckUniOp(expr: Expr<null>, env: TypeEnv): Expr<Type> {
     if(expr.tag != "uniop") {
-        throw new Error("TYPECHECK  ERROR: typeCheckUniOp only take unary operations");
+        throw new Error("TYPE ERROR: typeCheckUniOp only take unary operations");
     }
     switch(expr.op) {
         // work for int
         case UniOp.Minus:
             const typedExpr = typeCheckExpr(expr.expr, env);
             if(typedExpr.a !== "int") {
-                throw new Error(`TYPECHECK ERROR: uniary operator ${UniOp.Minus} expected ${"int"}; got type ${typedExpr.a}`);
+                throw new Error(`TYPE ERROR: uniary operator ${UniOp.Minus} expected ${"int"}; got type ${typedExpr.a}`);
             }
             return {...expr, expr: typedExpr, a: "int"};
         // work for bool
@@ -250,20 +250,20 @@ export function typeCheckUniOp(expr: Expr<null>, env: TypeEnv): Expr<Type> {
             }
             return {...expr, expr: notTypedExpr, a: "bool"};
         default:
-            throw new Error(`TYPECHECK ERROR: undefined unary operator ${expr}. This error should be called in parser`);
+            throw new Error(`TYPE ERROR: undefined unary operator ${expr}. This error should be called in parser`);
     }
 }
 
 export function typeCheckWhile(stmt: Stmt<null>, env:TypeEnv): Stmt<Type> { // TODO
     if(stmt.tag !== 'while') {
-        throw new Error("TYPECHECK ERROR: the input statement should be while when calling typeCheckWhile");
+        throw new Error("TYPE ERROR: the input statement should be while when calling typeCheckWhile");
     }
 
     const typedWhileCond = typeCheckExpr(stmt.cond, env);
     const typedWhileBody = typeCheckStmts(stmt.stmts, env);
 
     if(typedWhileCond.a !== "bool") {
-        throw new Error(`TYPECHECK ERROR: Condtion expression cannot be of type '${typedWhileCond.a}'`);
+        throw new Error(`TYPE ERROR: Condtion expression cannot be of type '${typedWhileCond.a}'`);
     }
     return {
         a: "None",
@@ -275,14 +275,14 @@ export function typeCheckWhile(stmt: Stmt<null>, env:TypeEnv): Stmt<Type> { // T
 
 export function typeCheckIf(stmt: Stmt<null>, env:TypeEnv): Stmt<Type> {
     if(stmt.tag !== 'if') {
-        throw new Error("TYPECHECK ERROR: the input statement should be if when calling typeCheckIf");
+        throw new Error("TYPE ERROR: the input statement should be if when calling typeCheckIf");
     }
 
     // check if
     const typedIfCond = typeCheckExpr(stmt.ifOp.cond, env);
     const typedIfBody = typeCheckStmts(stmt.ifOp.stmts, env);
     if(typedIfCond.a !== "bool") {
-        throw new Error(`TYPECHECK ERROR: Condtion expression cannot be of type '${typedIfCond.a}'`);
+        throw new Error(`TYPE ERROR: Condtion expression cannot be of type '${typedIfCond.a}'`);
     }
     
     // check elif
@@ -292,7 +292,7 @@ export function typeCheckIf(stmt: Stmt<null>, env:TypeEnv): Stmt<Type> {
         typedElifCond = typeCheckExpr(stmt.elifOp.cond, env);
         typedElifBody = typeCheckStmts(stmt.elifOp.stmts, env);
         if(typedElifCond.a !== "bool") {
-            throw new Error(`TYPECHECK ERROR: Condtion expression cannot be of type '${typedElifCond.a}'`);
+            throw new Error(`TYPE ERROR: Condtion expression cannot be of type '${typedElifCond.a}'`);
         }
     }
 
@@ -312,47 +312,47 @@ export function typeCheckIf(stmt: Stmt<null>, env:TypeEnv): Stmt<Type> {
 
 export function typeCheckField(expr: Expr<null>, env: TypeEnv): Expr<Type> {
     if (expr.tag !== "getfield") {
-        throw new Error("TYPECHECK ERROR: typeCheckMethod only accepts a getfield as an input expr");
+        throw new Error("TYPE ERROR: typeCheckMethod only accepts a getfield as an input expr");
     }
     const typedObj = typeCheckExpr(expr.obj, env);
     if (typedObj.a === "int" || typedObj.a === "bool" || typedObj.a === "None") { // cannot compile with isObject()
-        throw new Error("TYPECHECK ERROR: Only objects can get fields.");
+        throw new Error("TYPE ERROR: Only objects can get fields.");
     }
     if (!env.classFields.has(typedObj.a.class)) {
-        throw new Error("TYPECHECK ERROR: The class doesn't exist.");
+        throw new Error("TYPE ERROR: The class doesn't exist.");
     }
 
     const classFields = env.classFields.get(typedObj.a.class);
     if (!classFields.has(expr.name)) {
-        throw new Error("TYPECHECK ERROR: The field doesn't exist in the class.");
+        throw new Error("TYPE ERROR: The field doesn't exist in the class.");
     }
     return { ...expr, obj: typedObj, a: classFields.get(expr.name) };
 }
 
 export function typeCheckMethod(expr: Expr<null>, env: TypeEnv): Expr<Type> {
     if (expr.tag !== "method") {
-        throw new Error("TYPECHECK ERROR: typeCheckMethod only accepts a method as an input expr");
+        throw new Error("TYPE ERROR: typeCheckMethod only accepts a method as an input expr");
     }
     const typedObj = typeCheckExpr(expr.obj, env);
     if (typedObj.a === "int" || typedObj.a === "bool" || typedObj.a === "None") {
-        throw new Error("TYPECHECK ERROR: Only classes can call methods.");
+        throw new Error("TYPE ERROR: Only classes can call methods.");
     }
     if (!env.classMethods.has(typedObj.a.class)) {
-        throw new Error("TYPECHECK ERROR: The class doesn't exist.");
+        throw new Error("TYPE ERROR: The class doesn't exist.");
     }
     const classMethods = env.classMethods.get(typedObj.a.class);
     if (!classMethods.has(expr.name)) {
-        throw new Error("TYPECHECK ERROR: The method doesn't exist in the class.");
+        throw new Error("TYPE ERROR: The method doesn't exist in the class.");
     }
 
     const [argTyps, retTyp] = classMethods.get(expr.name);
     const typedArgs = expr.args.map(a => typeCheckExpr(a, env));
     if (argTyps.length != typedArgs.length) { // We escaped "self" in the parser.
-        throw new Error("TYPECHECK ERROR: The number of parameters is incorrect.");
+        throw new Error("TYPE ERROR: The number of parameters is incorrect.");
     }
     argTyps.forEach((t, i) => {
         if (!isSameType(t, typedArgs[i].a)) {
-            throw new Error("TYPECHECK ERROR: incorrect parameter type");
+            throw new Error("TYPE ERROR: incorrect parameter type");
         }
     })
     return { ...expr, obj: typedObj, args: typedArgs, a: retTyp };
@@ -360,7 +360,7 @@ export function typeCheckMethod(expr: Expr<null>, env: TypeEnv): Expr<Type> {
 
 export function typeCheckCall(expr: Expr<null>, env: TypeEnv): Expr<Type> {
     if (expr.tag !== "call") {
-        throw new Error("TYPECHECK ERROR: typeCheckCall only accept a call as an input expr");
+        throw new Error("TYPE ERROR: typeCheckCall only accept a call as an input expr");
     }
     if (!env.funcs.has(expr.name)) {
         console.warn(`TYPECHECK WARNING: If the ${expr.name} function is an imported one, we don't do any type check.`); // ex. print()
@@ -374,7 +374,7 @@ export function typeCheckCall(expr: Expr<null>, env: TypeEnv): Expr<Type> {
     const params = env.funcs.get(expr.name)[0];
     const args = expr.args;
     if(args.length !== params.length) {
-        throw new Error(`TYPECHECK ERROR: call func ${expr.name}; expected ${params.length} arguments; got ${args.length}`);
+        throw new Error(`TYPE ERROR: call func ${expr.name}; expected ${params.length} arguments; got ${args.length}`);
     }
 
     // check argument type
@@ -382,7 +382,7 @@ export function typeCheckCall(expr: Expr<null>, env: TypeEnv): Expr<Type> {
     for(let idx = 0; idx < params.length; ++idx) {
         const typedArg = typeCheckExpr(args[idx], env);
         if(typedArg.a !== params[idx]) {
-            throw new Error(`TYPECHECK ERROR: call func ${expr.name}; expected type ${params[idx]}; got type ${typedArg.a} in parameters ${idx}`);
+            throw new Error(`TYPE ERROR: call func ${expr.name}; expected type ${params[idx]}; got type ${typedArg.a} in parameters ${idx}`);
         }
         typedArgs.push(typedArg);
     }
@@ -413,7 +413,7 @@ Check the type of class definition:
 */
 export function typeCheckClassDef(cls: Stmt<null>, env: TypeEnv): Stmt<Type> {
     if (cls.tag !== "class") {
-        throw new Error("This is not a class statement.");
+        throw new Error("TYPE ERROR: This is not a class statement.");
     }
 
     // The methods in the class can access the global variables.
@@ -447,7 +447,7 @@ export function typeCheckFuncDef(func: FuncDef<null>, env: TypeEnv): FuncDef<Typ
    func.params.forEach(param => {
        // Params are added first to check duplicate initializations.
        if (scopeVar.has(param.name)) {
-           throw Error("duplicate param declaration in the same field");
+           throw Error("TYPE ERROR: duplicate param declaration in the same field");
        }
        scopeVar.add(param.name);
        localEnv.vars.set(param.name, param.type);    
@@ -457,7 +457,7 @@ export function typeCheckFuncDef(func: FuncDef<null>, env: TypeEnv): FuncDef<Typ
    const localTypedInits = typeCheckVarInit(func.varInits, localEnv);
    func.varInits.forEach(localTypedInit => {
         if (scopeVar.has(localTypedInit.name)) {
-            throw Error("duplicate init declaration in the same field");
+            throw Error("TYPE ERROR: duplicate init declaration in the same field");
         }
         scopeVar.add(localTypedInit.name);
        localEnv.vars.set(localTypedInit.name, localTypedInit.type);
@@ -471,7 +471,7 @@ export function typeCheckFuncDef(func: FuncDef<null>, env: TypeEnv): FuncDef<Typ
 
    // make sure every path has the expected return 
    if (!typeCheckHasReturn(func.stmts, env) && func.retType !== "None") {
-        throw new Error(`TYPECHECK ERROR: All paths in function/method must have a return statement: ${func.name}`);
+        throw new Error(`TYPE ERROR: All paths in function/method must have a return statement: ${func.name}`);
    }
    return { ...func, params: typedParams, varInits: localTypedInits, stmts: typedStmts };
 }
@@ -526,7 +526,7 @@ export function typeCheckHasReturn(body: Stmt<null>[], env: TypeEnv): boolean {
             case "while":
                 continue;
             default:
-                throw new Error(`TYPECHECK ERROR: typeCheckHasReturn meets unknown statement`);
+                throw new Error(`TYPE ERROR: typeCheckHasReturn meets unknown statement`);
         }
     }
     return false;
