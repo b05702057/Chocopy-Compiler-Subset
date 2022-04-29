@@ -702,11 +702,10 @@ print(r1.mul(r2).mul(r2).n)
     name: "easy",
     input: 
     `
-class C(object):
-    x : int = 0
-
-c : C = None
-c.x
+class A(object):
+    g : int = 0
+    def __init__(self: A, g : int):
+        self.g = g
     `,
     output: ""
   },

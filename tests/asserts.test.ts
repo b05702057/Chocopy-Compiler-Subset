@@ -29,9 +29,6 @@ export function assertFail(name: string, source: string) {
   it(name, async () => {
     try {
       await run(source);
-      throw Error("fuck")
-
-
       fail("Expected an exception");
     } catch (err) {
       expect(err.message).to.contain("RUNTIME ERROR:");

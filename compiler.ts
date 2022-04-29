@@ -448,9 +448,12 @@ function codeGenClassDef(classDef: Stmt<Type>, globalEnv: GlobalEnv): string {
 
     // add a return statement to the init function
     if (m.name == "__init__") {
-      if (funcDef.params.length > 0) {
-        throw Error("TYPE ERROR: __init__ should only have one argument");
-      }
+      console.log(m.name);
+      console.log(funcDef.params);
+
+      // if (funcDef.params.length > 0) {
+      //   throw Error("TYPE ERROR: __init__ should only have one argument");
+      // }
 
       funcDef.stmts.push({ 
         a: "None", 

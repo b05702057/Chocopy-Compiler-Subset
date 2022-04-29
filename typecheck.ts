@@ -449,6 +449,10 @@ export function typeCheckFuncDef(func: FuncDef<null>, env: TypeEnv): FuncDef<Typ
        if (scopeVar.has(param.name)) {
            throw Error("TYPE ERROR: duplicate param declaration in the same field");
        }
+
+       if (func.name == "__init__" && func.params.length > 0) {
+           throw Error("TYPE ERROR: __init__ should only have one argument");
+       } 
        scopeVar.add(param.name);
        localEnv.vars.set(param.name, param.type);    
    })
