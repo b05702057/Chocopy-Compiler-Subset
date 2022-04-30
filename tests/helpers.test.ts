@@ -5,19 +5,20 @@ import { importObject } from "./import-object.test";
 
 // Modify typeCheck to return a `Type` as we have specified below
 export function typeCheck(source: string) : Type {
-  const program = typeCheckProgram(parse(source));
-  if (program.stmts.length === 0) {
-    return "none";
-  }
-  const lastStatement = program.stmts[program.stmts.length - 1];
-  if (lastStatement.tag == "expr") {
-    if (lastStatement.expr.a === "None") {
-      return "none";
-    }
-    // convert the type for testing
-    return lastStatement.expr.a;
-  }
-  return "none";
+  throw Error(`check if typeCheck is called correctly ${source}`);
+  // const program = typeCheckProgram(parse(source));
+  // if (program.stmts.length === 0) {
+  //   return "none";
+  // }
+  // const lastStatement = program.stmts[program.stmts.length - 1];
+  // if (lastStatement.tag == "expr") {
+  //   if (lastStatement.expr.a === "None") {
+  //     return "none";
+  //   }
+  //   // convert the type for testing
+  //   return lastStatement.expr.a;
+  // }
+  // return "none";
 }
 
 // Modify run to use `importObject` (imported above) to use for printing
