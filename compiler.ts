@@ -47,13 +47,7 @@ export function setGlobalInfo(program: Program<Type>) {
   // set variables
   for (let idx = 0; idx < program.varInits.length; ++idx) {
     globalEnv.vars.set(program.varInits[idx].name, program.varInits[idx]);
-    
-    // Classes will be initialized as None.
-    // globalEnv.varIsNone.set(program.varInits[idx].name, true);
     const initType = program.varInits[idx].type;
-    // if (initType === "int" || initType === "bool") {
-    //   globalEnv.varIsNone.set(program.varInits[idx].name, false);
-    // }
   }
 
   // set funcstions
@@ -61,8 +55,7 @@ export function setGlobalInfo(program: Program<Type>) {
     globalEnv.funcs.set(program.funcDefs[idx].name, program.funcDefs[idx]);
   }
 
-  // set class field indexes and init value
-  // set class methods
+  // set class fields (indexes and init values) and methods
   for (let idx = 0; idx < program.classDefs.length; idx++) {
     var classIndexes = new Map<string, number>();
     var classInits = new Map<string, Literal<Type>>();
@@ -121,13 +114,11 @@ export function compile(source: string) : CompileResult {
   const lastExpr = ast[ast.length - 1]
   let returnType = "";
   let returnExpr = "";
-  // console.log(`ast.length: ${ast.length}, lastExpr: ${lastExpr.tag}`);
   if(ast.length > 0 && lastExpr.tag === "expr") {
     returnType = "(result i32)";
     returnExpr = "\n(local.get $last)"; // Since we use a function at the end, we need to put the return value in the stack.
   }
   // The last value is not needed if the last statement is not an expression.
-
   return {
     wasmSource: `${globalVars}\n${classes}\n${funcs}\n(func (export "exported_func") ${returnType}${commands.join('\n')}${returnExpr})`
   };
@@ -139,10 +130,6 @@ function codeGen(stmt: Stmt<Type>, globalEnv: GlobalEnv, localEnv: LocalEnv) : s
     case "assign":
       let valStmts = codeGenExpr(stmt.value, globalEnv, localEnv); // rhs
       let leftExpr = codeGenExpr(stmt.name, globalEnv, localEnv); // lhs
-
-      // if (globalEnv.varIsNone.has(stmt.variable)) {
-      //   globalEnv.varIsNone.set(stmt.variable, false);
-      // }
 
       // generate the "store" assign code
       if (stmt.name.tag == "getfield") {
@@ -184,7 +171,6 @@ function codeGenMainBody(stmts: Stmt<Type>[], globalEnv: GlobalEnv, localEnv: Lo
   // put $last on the stack, and it wil consume the top value on the stack eventually
   
   const localDefines = [scratchVar];
-
   const commandGroups = stmts.map((stmt) => codeGen(stmt, globalEnv, localEnv));
   return localDefines.concat([].concat.apply([], commandGroups));
 }
@@ -206,15 +192,6 @@ function codeGenExpr(expr : Expr<Type>, globalEnv: GlobalEnv, localEnv: LocalEnv
     case "call": 
         return codeGenCall(expr, globalEnv, localEnv);
     case "method":
-        // const objAddr = codeGenExpr(expr.obj, globalEnv, localEnv);
-        // const checkValidAddress = [...objAddr, `(i32.const -4) \n(i32.add)`, `(i32.load)`, `local.set $last`]; // c : Rat = None, c.x
-        // if (expr.obj.tag === "id") {
-        //   const variable = expr.obj.name;
-        //   if (globalEnv.varIsNone.has(variable) && globalEnv.varIsNone.get(variable) === true) {
-        //     throw Error("RUNTIME ERROR: The class variable is still None.")
-        //   }
-        // }
-
         const argInstrs = expr.args.map(a => codeGenExpr(a, globalEnv, localEnv));
         const flattenArgs: string[] = []; // flat the list of lists
         argInstrs.forEach(arg => flattenArgs.push(arg.join("\n")));
@@ -332,13 +309,6 @@ function codeGenField(expr: Expr<Type>, globalEnv: GlobalEnv, localEnv: LocalEnv
   if (expr.obj.a === "int" || expr.obj.a === "bool" || expr.obj.a === "None") {
     throw Error("COMPILER ERROR: The object should be a class.");
   }
-
-  // if (expr.obj.tag === "id") {
-  //   const variable = expr.obj.name;
-  //   if (globalEnv.varIsNone.has(variable) && globalEnv.varIsNone.get(variable) === true) {
-  //     throw Error("RUNTIME ERROR: The class variable is still None.")
-  //   }
-  // }
 
   // If it is an instance, it should return its address, ex. (global.get $r1).
   const objAddr = codeGenExpr(expr.obj, globalEnv, localEnv);
@@ -504,14 +474,6 @@ function codeGenClassDef(classDef: Stmt<Type>, globalEnv: GlobalEnv): string {
       type: classDef.a 
     }, ...funcDef.params];
 
-    // funcDef.params.push({ 
-    //   a: { 
-    //     tag: "object", 
-    //     class: classDef.name 
-    //   }, 
-    //   name: "self", 
-    //   type: classDef.a 
-    // });
     codeGenFuncDef(funcDef, globalEnv).forEach(funcWasm => {
       classWasm.push(funcWasm);
     })
@@ -544,8 +506,6 @@ function codeGenFuncDef(funcDef: FuncDef<Type>, globalEnv: GlobalEnv): string[] 
   const body = codeGenBody(funcDef.stmts, globalEnv, localEnv);
 
   // return tge function definition in WASM
-  // return [`\n(func $${funcDef.name} ${params} (result i32) ${localVarInit}\n${body.join('\n')})`]
-  // return [`(func $${funcDef.name} ${params} (result i32)\n(local $last i32)\n${localVarInit}\n${body.join('\n')}\n(i32.const 0))`]
   return [`(func $${funcDef.name} ${params} (result i32)\n(local $last i32)${localVarInit}\n${body.join('\n')}\n(i32.const 0))\n`]
 }
 
@@ -573,5 +533,3 @@ function codeGenId(id: Expr<Type>, GlocalEnv: GlobalEnv, localEnv: LocalEnv): st
   }
   return `(global.get $${id.name})`;
 }
-
-// check field, method, parameter
