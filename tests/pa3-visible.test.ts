@@ -1,4 +1,4 @@
-import { assertPrint, assertFail, assertTCFail, assertTC } from "./asserts.test";
+import { assertPrint, assertFail, assertTCFail, assertTC, assertNothing } from './asserts.test';
 import { NUM, BOOL, NONE, CLASS } from "./helpers.test"
 
 describe("PA3 visible tests", () => {
@@ -184,4 +184,13 @@ class C(object):
   x : int = 0
 c : C = None
 c = None`, NONE);
+
+// // 21
+// assertNothing("nothing", 
+// `
+// class C(object):
+//     x : int = 0
+// c : C = None
+// c.x
+// `);
 });

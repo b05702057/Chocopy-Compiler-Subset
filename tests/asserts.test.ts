@@ -53,3 +53,15 @@ export function assertTCFail(name: string, source: string) {
   });
 }
 
+export function assertNothing(name: string, source: string) {
+  it(name, async () => {
+    try {
+      const result = await run(source);
+      throw Error(`${result} aaa`)
+      fail("Expected an exception");
+    } catch (err) {
+      expect(err.message).to.contain("RUNTIME ERROR:");
+    }
+  });
+}
+

@@ -243,7 +243,7 @@ export function node2type(c: TreeCursor, s:string): Type {
     default: // We'll check if the type exists in the type checker
       return {
         tag: "object",
-        class: typeStr
+        class: typeStr,
       }
       // throw new Error(`PARSE ERROR: unknown type ${typeStr}`);
   }

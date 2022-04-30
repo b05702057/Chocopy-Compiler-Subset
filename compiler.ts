@@ -22,6 +22,7 @@ export function createEmptyLocalEnv(): LocalEnv {
 
 export type GlobalEnv = {
   vars: Map<string, VarInit<Type>>,
+  varIsNone: Map<string, boolean>,
   funcs: Map<string, FuncDef<Type>>,
   classIndexes: Map<string, Map<string, number>>, // class : classdata (field: [index, init value])
   classInits: Map<string, Map<string, Literal<Type>>>,
@@ -31,6 +32,7 @@ export type GlobalEnv = {
 export function createEmptyGlobalEnv(): GlobalEnv {
   return {
     vars: new Map<string, VarInit<Type>>(),
+    varIsNone: new Map<string, boolean>(),
     funcs: new Map<string, FuncDef<Type>>(), // store a function and its definition 
     classIndexes: new Map<string, Map<string, number>>(),
     classInits: new Map<string, Map<string, Literal<Type>>>(),
@@ -45,6 +47,13 @@ export function setGlobalInfo(program: Program<Type>) {
   // set variables
   for (let idx = 0; idx < program.varInits.length; ++idx) {
     globalEnv.vars.set(program.varInits[idx].name, program.varInits[idx]);
+    
+    // Classes will be initialized as None.
+    globalEnv.varIsNone.set(program.varInits[idx].name, true);
+    const initType = program.varInits[idx].type;
+    if (initType === "int" || initType === "bool") {
+      globalEnv.varIsNone.set(program.varInits[idx].name, false);
+    }
   }
 
   // set funcstions
@@ -128,6 +137,10 @@ function codeGen(stmt: Stmt<Type>, globalEnv: GlobalEnv, localEnv: LocalEnv) : s
       let valStmts = codeGenExpr(stmt.value, globalEnv, localEnv); // rhs
       let leftExpr = codeGenExpr(stmt.name, globalEnv, localEnv); // lhs
 
+      if (globalEnv.varIsNone.has(stmt.variable)) {
+        globalEnv.varIsNone.set(stmt.variable, false);
+      }
+
       // generate the "store" assign code
       if (stmt.name.tag == "getfield") {
         leftExpr = leftExpr.slice(0, -1); // strip `i32.load` since it's lhs
@@ -192,6 +205,12 @@ function codeGenExpr(expr : Expr<Type>, globalEnv: GlobalEnv, localEnv: LocalEnv
     case "method":
         // const objAddr = codeGenExpr(expr.obj, globalEnv, localEnv);
         // const checkValidAddress = [...objAddr, `(i32.const -4) \n(i32.add)`, `(i32.load)`, `local.set $last`]; // c : Rat = None, c.x
+        if (expr.obj.tag === "id") {
+          const variable = expr.obj.name;
+          if (globalEnv.varIsNone.has(variable) && globalEnv.varIsNone.get(variable) === true) {
+            throw Error("RUNTIME ERROR: The class variable is still None.")
+          }
+        }
 
         const argInstrs = expr.args.map(a => codeGenExpr(a, globalEnv, localEnv));
         const flattenArgs: string[] = []; // flat the list of lists
@@ -311,6 +330,13 @@ function codeGenField(expr: Expr<Type>, globalEnv: GlobalEnv, localEnv: LocalEnv
     throw Error("COMPILER ERROR: The object should be a class.");
   }
 
+  if (expr.obj.tag === "id") {
+    const variable = expr.obj.name;
+    if (globalEnv.varIsNone.has(variable) && globalEnv.varIsNone.get(variable) === true) {
+      throw Error("RUNTIME ERROR: The class variable is still None.")
+    }
+  }
+
   // If it is an instance, it should return its address, ex. (global.get $r1).
   const objAddr = codeGenExpr(expr.obj, globalEnv, localEnv);
   const checkValidAddress = [...objAddr, `(i32.const -4) \n(i32.add)`, `(i32.load)`, `local.set $last`]; // c : Rat = None, c.x
@@ -420,7 +446,7 @@ function codeGenClassDef(classDef: Stmt<Type>, globalEnv: GlobalEnv): string {
     const params : TypedVar<Type>[] = [{ 
       a: { 
         tag: "object", 
-        class: classDef.name 
+        class: classDef.name, 
       }, 
       name: "self", 
       type: classDef.a 
@@ -429,7 +455,7 @@ function codeGenClassDef(classDef: Stmt<Type>, globalEnv: GlobalEnv): string {
     const getfieldObj : Expr<Type> = { 
       a: { 
         tag: "object", 
-        class: classDef.name 
+        class: classDef.name,
       }, 
       tag: "id", 
       name: "self" 
@@ -458,9 +484,9 @@ function codeGenClassDef(classDef: Stmt<Type>, globalEnv: GlobalEnv): string {
         a: "None", 
         tag: "return", 
         expr: { 
-          a: { tag: "object", class: classDef.name}, 
+          a: { tag: "object", class: classDef.name }, 
           tag: "id", 
-          name: "self"
+          name: "self",
         }
       });
     }
@@ -469,7 +495,7 @@ function codeGenClassDef(classDef: Stmt<Type>, globalEnv: GlobalEnv): string {
     funcDef.params = [{ 
       a: { 
         tag: "object", 
-        class: classDef.name 
+        class: classDef.name, 
       }, 
       name: "self", 
       type: classDef.a 
@@ -544,3 +570,5 @@ function codeGenId(id: Expr<Type>, GlocalEnv: GlobalEnv, localEnv: LocalEnv): st
   }
   return `(global.get $${id.name})`;
 }
+
+// check field, method, parameter

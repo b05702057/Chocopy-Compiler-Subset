@@ -5,7 +5,6 @@
 
 import wabt from 'wabt';
 import * as compiler from './compiler';
-import {parse} from './parser';
 
 
 // NOTE(joe): This is a hack to get the CLI Repl to run. WABT registers a global
