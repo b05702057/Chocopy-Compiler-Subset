@@ -22,7 +22,7 @@ export function createEmptyLocalEnv(): LocalEnv {
 
 export type GlobalEnv = {
   vars: Map<string, VarInit<Type>>,
-  varIsNone: Map<string, boolean>,
+  // varIsNone: Map<string, boolean>,
   funcs: Map<string, FuncDef<Type>>,
   classIndexes: Map<string, Map<string, number>>, // class : classdata (field: [index, init value])
   classInits: Map<string, Map<string, Literal<Type>>>,
@@ -32,7 +32,7 @@ export type GlobalEnv = {
 export function createEmptyGlobalEnv(): GlobalEnv {
   return {
     vars: new Map<string, VarInit<Type>>(),
-    varIsNone: new Map<string, boolean>(),
+    // varIsNone: new Map<string, boolean>(),
     funcs: new Map<string, FuncDef<Type>>(), // store a function and its definition 
     classIndexes: new Map<string, Map<string, number>>(),
     classInits: new Map<string, Map<string, Literal<Type>>>(),
@@ -49,11 +49,11 @@ export function setGlobalInfo(program: Program<Type>) {
     globalEnv.vars.set(program.varInits[idx].name, program.varInits[idx]);
     
     // Classes will be initialized as None.
-    globalEnv.varIsNone.set(program.varInits[idx].name, true);
+    // globalEnv.varIsNone.set(program.varInits[idx].name, true);
     const initType = program.varInits[idx].type;
-    if (initType === "int" || initType === "bool") {
-      globalEnv.varIsNone.set(program.varInits[idx].name, false);
-    }
+    // if (initType === "int" || initType === "bool") {
+    //   globalEnv.varIsNone.set(program.varInits[idx].name, false);
+    // }
   }
 
   // set funcstions
@@ -88,6 +88,9 @@ export function setGlobalInfo(program: Program<Type>) {
 }
 
 export function compile(source: string) : CompileResult {
+  if (source.length === 0) {
+    return { wasmSource: `(func (export "exported_func"))` }
+  }
 
   // parse program and get each elements
   const program = typeCheckProgram(parse(source));
@@ -137,9 +140,9 @@ function codeGen(stmt: Stmt<Type>, globalEnv: GlobalEnv, localEnv: LocalEnv) : s
       let valStmts = codeGenExpr(stmt.value, globalEnv, localEnv); // rhs
       let leftExpr = codeGenExpr(stmt.name, globalEnv, localEnv); // lhs
 
-      if (globalEnv.varIsNone.has(stmt.variable)) {
-        globalEnv.varIsNone.set(stmt.variable, false);
-      }
+      // if (globalEnv.varIsNone.has(stmt.variable)) {
+      //   globalEnv.varIsNone.set(stmt.variable, false);
+      // }
 
       // generate the "store" assign code
       if (stmt.name.tag == "getfield") {
@@ -205,12 +208,12 @@ function codeGenExpr(expr : Expr<Type>, globalEnv: GlobalEnv, localEnv: LocalEnv
     case "method":
         // const objAddr = codeGenExpr(expr.obj, globalEnv, localEnv);
         // const checkValidAddress = [...objAddr, `(i32.const -4) \n(i32.add)`, `(i32.load)`, `local.set $last`]; // c : Rat = None, c.x
-        if (expr.obj.tag === "id") {
-          const variable = expr.obj.name;
-          if (globalEnv.varIsNone.has(variable) && globalEnv.varIsNone.get(variable) === true) {
-            throw Error("RUNTIME ERROR: The class variable is still None.")
-          }
-        }
+        // if (expr.obj.tag === "id") {
+        //   const variable = expr.obj.name;
+        //   if (globalEnv.varIsNone.has(variable) && globalEnv.varIsNone.get(variable) === true) {
+        //     throw Error("RUNTIME ERROR: The class variable is still None.")
+        //   }
+        // }
 
         const argInstrs = expr.args.map(a => codeGenExpr(a, globalEnv, localEnv));
         const flattenArgs: string[] = []; // flat the list of lists
@@ -221,7 +224,7 @@ function codeGenExpr(expr : Expr<Type>, globalEnv: GlobalEnv, localEnv: LocalEnv
         }
         // The call object is the first argument self.
         const callObject = codeGenExpr(expr.obj, globalEnv, localEnv).join("\n");
-        return [callObject, flattenArgs.join("\n"), `\n(call $$${expr.obj.a.class}$${expr.name})`];
+        return [callObject, `(call $checkAddress)`, flattenArgs.join("\n"), `\n(call $$${expr.obj.a.class}$${expr.name})`];
     case "getfield":
       return codeGenField(expr, globalEnv, localEnv);
   }
@@ -330,12 +333,12 @@ function codeGenField(expr: Expr<Type>, globalEnv: GlobalEnv, localEnv: LocalEnv
     throw Error("COMPILER ERROR: The object should be a class.");
   }
 
-  if (expr.obj.tag === "id") {
-    const variable = expr.obj.name;
-    if (globalEnv.varIsNone.has(variable) && globalEnv.varIsNone.get(variable) === true) {
-      throw Error("RUNTIME ERROR: The class variable is still None.")
-    }
-  }
+  // if (expr.obj.tag === "id") {
+  //   const variable = expr.obj.name;
+  //   if (globalEnv.varIsNone.has(variable) && globalEnv.varIsNone.get(variable) === true) {
+  //     throw Error("RUNTIME ERROR: The class variable is still None.")
+  //   }
+  // }
 
   // If it is an instance, it should return its address, ex. (global.get $r1).
   const objAddr = codeGenExpr(expr.obj, globalEnv, localEnv);
@@ -344,7 +347,7 @@ function codeGenField(expr: Expr<Type>, globalEnv: GlobalEnv, localEnv: LocalEnv
   const classIndexes = globalEnv.classIndexes.get(expr.obj.a.class);
   const indexOfField = classIndexes.get(expr.name);
   // return [checkValidAddress.join("\n"), ...objAddr, `(i32.const ${indexOfField * 4}) \n(i32.add)`, `(i32.load)`];
-  return [...objAddr, `(i32.const ${indexOfField * 4}) \n(i32.add)`, `(i32.load)`];
+  return [...objAddr, `(call $checkAddress)`, `(i32.const ${indexOfField * 4}) \n(i32.add)`, `(i32.load)`];
 }
 
 function codeGenCall(expr: Expr<Type>, globalEnv: GlobalEnv, localEnv: LocalEnv): string[] {

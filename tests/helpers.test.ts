@@ -27,7 +27,13 @@ export function typeCheck(source: string) : Type {
 export async function run(source: string) {
   // Create the memory and add it to impots
   var memory = new WebAssembly.Memory({initial:10, maximum:100});
-  (importObject.imports as any).mem = memory
+  (importObject.imports as any).mem = memory;
+  (importObject.imports as any).checkAddress = (arg: any) => {
+    if (String(arg) === "0") {
+      throw Error("RUNTIME ERROR: The class is still None.")
+  }
+  return arg;
+  }
   const result = await runwatsrc(source, {importObject});
   return result;
 }
