@@ -26,11 +26,16 @@ export function typeCheck(source: string) : Type {
 // within another function in your compiler, for example if you need other
 // JavaScript-side helpers
 export async function run(source: string) {
-  throw Error(`check if run is called correctly ${source}`);
-  // Create the memory and add it to impots
+  // Create the memory and add it to impots
   var memory = new WebAssembly.Memory({initial:10, maximum:100});
-  (importObject.imports as any).mem = memory
-  const result = await runwatsrc(source, {importObject});
+  (importObject.imports as any).mem = memory;
+  (importObject.imports as any).checkAddress = (arg: any) => {
+    if (String(arg) === "0") {
+      throw Error("RUNTIME ERROR: The class is still None.")
+  }
+  return arg;
+  }
+  const result = await runwatsrc(source, {importObject});
   return result;
 }
 

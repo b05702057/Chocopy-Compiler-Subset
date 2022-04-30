@@ -22,6 +22,7 @@ export function createEmptyLocalEnv(): LocalEnv {
 
 export type GlobalEnv = {
   vars: Map<string, VarInit<Type>>,
+  // varIsNone: Map<string, boolean>,
   funcs: Map<string, FuncDef<Type>>,
   classIndexes: Map<string, Map<string, number>>, // class : classdata (field: [index, init value])
   classInits: Map<string, Map<string, Literal<Type>>>,
@@ -31,6 +32,7 @@ export type GlobalEnv = {
 export function createEmptyGlobalEnv(): GlobalEnv {
   return {
     vars: new Map<string, VarInit<Type>>(),
+    // varIsNone: new Map<string, boolean>(),
     funcs: new Map<string, FuncDef<Type>>(), // store a function and its definition 
     classIndexes: new Map<string, Map<string, number>>(),
     classInits: new Map<string, Map<string, Literal<Type>>>(),
@@ -45,6 +47,7 @@ export function setGlobalInfo(program: Program<Type>) {
   // set variables
   for (let idx = 0; idx < program.varInits.length; ++idx) {
     globalEnv.vars.set(program.varInits[idx].name, program.varInits[idx]);
+    const initType = program.varInits[idx].type;
   }
 
   // set funcstions
@@ -52,7 +55,7 @@ export function setGlobalInfo(program: Program<Type>) {
     globalEnv.funcs.set(program.funcDefs[idx].name, program.funcDefs[idx]);
   }
 
-  // set class field indexes and init value
+  // set class fields (indexes and init values) and methods
   for (let idx = 0; idx < program.classDefs.length; idx++) {
     var classIndexes = new Map<string, number>();
     var classInits = new Map<string, Literal<Type>>();
@@ -69,11 +72,18 @@ export function setGlobalInfo(program: Program<Type>) {
     const className = classDef.name;
     globalEnv.classIndexes.set(className, classIndexes);
     globalEnv.classInits.set(className, classInits);
+
+    classDef.methods.forEach(m => {
+      globalEnv.funcs.set(`$$${className}$${m.name}`, m);
+    })
   }
   return globalEnv;
 }
 
 export function compile(source: string) : CompileResult {
+  if (source.length === 0) {
+    return { wasmSource: `(func (export "exported_func"))` }
+  }
 
   // parse program and get each elements
   const program = typeCheckProgram(parse(source));
@@ -104,13 +114,11 @@ export function compile(source: string) : CompileResult {
   const lastExpr = ast[ast.length - 1]
   let returnType = "";
   let returnExpr = "";
-  // console.log(`ast.length: ${ast.length}, lastExpr: ${lastExpr.tag}`);
   if(ast.length > 0 && lastExpr.tag === "expr") {
     returnType = "(result i32)";
     returnExpr = "\n(local.get $last)"; // Since we use a function at the end, we need to put the return value in the stack.
   }
   // The last value is not needed if the last statement is not an expression.
-
   return {
     wasmSource: `${globalVars}\n${classes}\n${funcs}\n(func (export "exported_func") ${returnType}${commands.join('\n')}${returnExpr})`
   };
@@ -163,7 +171,6 @@ function codeGenMainBody(stmts: Stmt<Type>[], globalEnv: GlobalEnv, localEnv: Lo
   // put $last on the stack, and it wil consume the top value on the stack eventually
   
   const localDefines = [scratchVar];
-
   const commandGroups = stmts.map((stmt) => codeGen(stmt, globalEnv, localEnv));
   return localDefines.concat([].concat.apply([], commandGroups));
 }
@@ -194,7 +201,7 @@ function codeGenExpr(expr : Expr<Type>, globalEnv: GlobalEnv, localEnv: LocalEnv
         }
         // The call object is the first argument self.
         const callObject = codeGenExpr(expr.obj, globalEnv, localEnv).join("\n");
-        return [callObject, flattenArgs.join("\n"), `\n(call $$${expr.obj.a.class}$${expr.name})`];
+        return [callObject, `(call $checkAddress)`, flattenArgs.join("\n"), `\n(call $$${expr.obj.a.class}$${expr.name})`];
     case "getfield":
       return codeGenField(expr, globalEnv, localEnv);
   }
@@ -309,7 +316,8 @@ function codeGenField(expr: Expr<Type>, globalEnv: GlobalEnv, localEnv: LocalEnv
 
   const classIndexes = globalEnv.classIndexes.get(expr.obj.a.class);
   const indexOfField = classIndexes.get(expr.name);
-  return [checkValidAddress.join("\n"), ...objAddr, `(i32.const ${indexOfField * 4}) \n(i32.add)`, `(i32.load)`];
+  // return [checkValidAddress.join("\n"), ...objAddr, `(i32.const ${indexOfField * 4}) \n(i32.add)`, `(i32.load)`];
+  return [...objAddr, `(call $checkAddress)`, `(i32.const ${indexOfField * 4}) \n(i32.add)`, `(i32.load)`];
 }
 
 function codeGenCall(expr: Expr<Type>, globalEnv: GlobalEnv, localEnv: LocalEnv): string[] {
@@ -345,9 +353,9 @@ function codeGenCall(expr: Expr<Type>, globalEnv: GlobalEnv, localEnv: LocalEnv)
       `(global.set $heap)`,
     ]
 
-    const initFuncName = `$$${expr.name}$__init__)`;
+    const initFuncName = `$$${expr.name}$__init__`;
     if (globalEnv.funcs.has(initFuncName)) {
-      initVals.push(`(call $$${expr.name}$__init__)`); // execute the __init__ operations
+      initVals.push(`(call ${initFuncName})`); // execute the __init__ operations
     }
     return initVals;
   }
@@ -411,7 +419,7 @@ function codeGenClassDef(classDef: Stmt<Type>, globalEnv: GlobalEnv): string {
     const params : TypedVar<Type>[] = [{ 
       a: { 
         tag: "object", 
-        class: classDef.name 
+        class: classDef.name, 
       }, 
       name: "self", 
       type: classDef.a 
@@ -420,7 +428,7 @@ function codeGenClassDef(classDef: Stmt<Type>, globalEnv: GlobalEnv): string {
     const getfieldObj : Expr<Type> = { 
       a: { 
         tag: "object", 
-        class: classDef.name 
+        class: classDef.name,
       }, 
       tag: "id", 
       name: "self" 
@@ -449,9 +457,9 @@ function codeGenClassDef(classDef: Stmt<Type>, globalEnv: GlobalEnv): string {
         a: "None", 
         tag: "return", 
         expr: { 
-          a: { tag: "object", class: classDef.name}, 
+          a: { tag: "object", class: classDef.name }, 
           tag: "id", 
-          name: "self"
+          name: "self",
         }
       });
     }
@@ -460,20 +468,12 @@ function codeGenClassDef(classDef: Stmt<Type>, globalEnv: GlobalEnv): string {
     funcDef.params = [{ 
       a: { 
         tag: "object", 
-        class: classDef.name 
+        class: classDef.name, 
       }, 
       name: "self", 
       type: classDef.a 
     }, ...funcDef.params];
 
-    // funcDef.params.push({ 
-    //   a: { 
-    //     tag: "object", 
-    //     class: classDef.name 
-    //   }, 
-    //   name: "self", 
-    //   type: classDef.a 
-    // });
     codeGenFuncDef(funcDef, globalEnv).forEach(funcWasm => {
       classWasm.push(funcWasm);
     })
@@ -506,8 +506,6 @@ function codeGenFuncDef(funcDef: FuncDef<Type>, globalEnv: GlobalEnv): string[] 
   const body = codeGenBody(funcDef.stmts, globalEnv, localEnv);
 
   // return tge function definition in WASM
-  // return [`\n(func $${funcDef.name} ${params} (result i32) ${localVarInit}\n${body.join('\n')})`]
-  // return [`(func $${funcDef.name} ${params} (result i32)\n(local $last i32)\n${localVarInit}\n${body.join('\n')}\n(i32.const 0))`]
   return [`(func $${funcDef.name} ${params} (result i32)\n(local $last i32)${localVarInit}\n${body.join('\n')}\n(i32.const 0))\n`]
 }
 

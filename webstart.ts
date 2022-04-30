@@ -31,6 +31,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         // elt.innerText = arg;
         return arg;
       },
+      checkAddress: (arg: any) => {
+        if (String(arg) === "0") {
+          throw Error("RUNTIME ERROR: The class is still None.")
+        }
+        return arg;
+      },
       mem: memory,
       abs: Math.abs,
       max: Math.max,

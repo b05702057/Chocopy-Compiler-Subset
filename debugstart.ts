@@ -2,8 +2,8 @@ import { parser } from 'lezer-python';
 import { TreeCursor } from 'lezer-tree';
 import { traverseStmt, parse, stringifyTree } from './parser';
 import { returnTestCases, callTestCases, programTestCases, compiledTestCases, typeCheckCases, typeCheckHasReturnCases} from './oldTests/cases.test';
-import {compile } from './compiler';
-
+import { compile } from './compiler';
+// import { run } from './tests/helpers.test';
 import * as fs from 'fs';
 import { setupEnv, typeCheckHasReturn, typeCheckProgram } from './typecheck';
 
@@ -244,6 +244,18 @@ function checkHasReturn(idx: number) {
     console.log(typeCheckHasReturn(program.funcDefs[0].stmts, env))
 }
 
+// function callRun() {
+//     const source = 
+// `
+// class C(object):
+//     x : int = 0
+// c : C = None
+// c.x
+// `
+//     run(source);
+// }
+
 // typeCheck0(22);
 // program(11);
 funcCompiled1(12);
+// callRun();

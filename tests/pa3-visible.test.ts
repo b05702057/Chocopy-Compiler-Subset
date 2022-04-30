@@ -1,4 +1,4 @@
-import { assertPrint, assertFail, assertTCFail, assertTC } from "./asserts.test";
+import { assertPrint, assertFail, assertTCFail, assertTC, assertNothing } from './asserts.test';
 import { NUM, BOOL, NONE, CLASS } from "./helpers.test"
 
 describe("PA3 visible tests", () => {
@@ -97,7 +97,7 @@ c2 = c1
 c1.x = 123
 print(c2.x)
 `, [`123`]),
-  // 11
+  11
   assertPrint("chained-method-calls", `
 class C(object):
   x : int = 123
@@ -184,4 +184,13 @@ class C(object):
   x : int = 0
 c : C = None
 c = None`, NONE);
+
+// // 21
+// assertNothing("nothing", 
+// `
+// class C(object):
+//     x : int = 0
+// c : C = None
+// c.x
+// `);
 });

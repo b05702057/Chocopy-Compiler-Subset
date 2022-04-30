@@ -572,7 +572,12 @@ export const programTestCases: TestCase<Object>[] = [
     name: "easy class",
     input: 
     `
-not True
+class A(object):
+def g(self: A) -> int:
+    if False:
+        return 0
+    else:
+        return
     `,
     output: {}
   },
@@ -704,7 +709,7 @@ print(r1.mul(r2).mul(r2).n)
     `
 class C(object):
     x : int = 0
-
+    
 c : C = None
 c.x
     `,
