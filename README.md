@@ -6,7 +6,7 @@
 Implemented the class definition and method definition parts for the compiler
 
 ### Run Locally
-* Run this Command: git clone https://github.com/b05702057/Chocopy-Compiler.git
+* Run this Command: git clone https://github.com/b05702057/Chocopy-Compiler-Subset.git
 * Run this Command: npm install
 * Run this Command: npm test
 * Run this Command: npm run build-web
