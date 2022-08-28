@@ -1,27 +1,16 @@
-# CSE231-Spring2022-pa2
-I provide the following command to run this program.
+# Chocopy-Compiler
 
-1. To test the program
-    ```
-    bash run_test.sh
-    ```
-    This script will test the code with the testing cases in ```./tests``` and remove the compiled *.js file automatically after testing.
-    
-2. To run the code in user-interface
-    ```
-    bash run_build_web.sh
-    ```
-    This script will generate and store the index.html in the ```build``` directory.
+### An even bigger compiler that can also support the heap-manipulating parts of ChocoPy.
 
-3. To run the program with command line
-    ```
-    bash run_build_cli.sh
-    ```
-    This script will generate the *.js files and store them in the ```cli ``` directory. You can then use the command below to execute the program.
-    ```
-    node cli/node-main.js <code>
-    ```
-    However, this is highly not recommended because putting codes in a line of string will cause a lot of trouble and errors. Life is beautiful and short. There is a better way (method 2) to run the program. Thus, please do not give yourself a hard time.
+## Task
+Implemented the class definition and method definition parts for the compiler
 
+### Run Locally
+* Run this Command: git clone https://github.com/b05702057/Chocopy-Compiler.git
+* Run this Command: npm install
+* Run this Command: npm test
+* Run this Command: npm run build-web
+* Open the file build/index.html in a browser
 
-    # PA3
+### Note
+* The detailed tasks are recorded here: https://ucsd-cse231-s22.github.io/week/week5/#assignment-3.
